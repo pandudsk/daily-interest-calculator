@@ -1,0 +1,19 @@
+{
+  "name": "daily-interest-compound-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline-first daily interest and annual compound interest Android app",
+  "scripts": {
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "web:serve": "npx http-server www"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}

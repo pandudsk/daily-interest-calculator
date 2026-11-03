@@ -1,0 +1,6 @@
+{
+  "appId": "com.dintakurthi.dailyinterest",
+  "appName": "Daily Interest Calculator",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
