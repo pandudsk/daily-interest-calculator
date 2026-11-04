@@ -1,50 +1,42 @@
-# Daily Interest & Compound Interest Calculator
+# Daily Interest Calculator — Updated Source
 
-Standalone Android app project (Capacitor 7). The app is offline-first and stores customer records on the device.
+Standalone Android project source for the existing `com.dintakurthi.dailyinterest` Capacitor app. This is **source code, not a prebuilt APK**.
 
-## Included features
-- Multiple customer accounts; add and rename customers
-- Manually add dated borrowing transactions
-- Daily interest: monthly rate / 100 / 30
-- Default rate: ₹1.50 per ₹100 per month (0.05% per day)
-- Optional annual compounding on the anniversary of the first transaction
-- Calculation date selector
-- Day-wise interest ledger and summary
-- Telugu and English interface; printed statement and shared statement follow the selected language
-- Print / Save as PDF, detailed statement sharing through Android share menu, CSV export
-- JSON backup and restore
-- English / Telugu interface
-- 200+ transactions supported by the UI (browser/device storage capacity applies)
+## Included in this revision
+- Purple/lavender theme across all app screens; splash branding references are included in `www/assets/`.
+- Existing customer data schema is retained. Legacy transactions without a `type` are migrated as `credit` (Appulu).
+- Customer add, rename, delete, and select are in the Customers tab; Dashboard only selects a customer and records entries.
+- Separate Appulu (credit) and Jamalu (debit) ledgers, each with its own first transaction date and annual compounding anniversary.
+- Final settlement = (Appulu principal + Appulu interest) − (Jamalu principal + Jamalu interest).
+- ₹1.50 per ₹100 per month by default, 30-day month, daily rate 0.05%.
+- Non-blocking transaction success toast; no OK dialog.
+- JSON backup/restore, transaction CSV export, share statement, print preview.
+- Printer guidance/settings for Android system print services, Bluetooth thermal printer apps/services, and USB OTG where compatible.
 
-## Calculation rules
-- All transaction amounts are treated as additional borrowings, not repayments.
-- Transactions are grouped by date.
-- Interest accrues on the outstanding running balance for the exact number of elapsed days.
-- When annual compounding is enabled, accrued interest is added to the balance on each anniversary of the first transaction date.
-- A transaction on an anniversary date is added after the anniversary interest is capitalized.
-- No interest is charged before the first transaction date.
-- This is a mathematical calculator; confirm the agreed rate and applicable legal requirements before using a statement as a formal demand.
+## Calculation convention
+For each ledger independently, interest accrues on that ledger's running balance at `monthlyRate / 100 / 30` per day. On each anniversary of that ledger's first transaction date, accrued interest is capitalized into that ledger's balance. The other ledger is calculated independently. This means a Jamalu transaction is not treated as a repayment against Appulu; both totals and their interest are calculated separately, then netted only in the final settlement.
 
-## Build Android APK
-Requirements: Node.js 20+, Android Studio, Android SDK, and Java version supported by your installed Android Gradle Plugin.
+## Important testing notes
+- This source should be tested with sample cases before being used for actual financial settlement. It is not certified accounting software.
+- Existing old records are treated as Appulu because the earlier version only supported borrowings. Review migrated records before relying on results.
+- The app uses local device storage. Back up before installing an update; Android uninstall/data-clear can erase local data.
+- Android printing opens the Android print flow (`window.print`). Wi-Fi/network printers depend on Android Print Service. Bluetooth thermal and USB OTG printing depend on the printer model, installed service/driver, Android version, and vendor app; universal direct-print compatibility is not guaranteed.
 
-1. Extract this ZIP.
-2. Open a terminal in the extracted folder.
-3. Run:
-   ```bash
-   npm install
-   npx cap add android
-   npx cap sync android
-   npx cap open android
-   ```
-4. In Android Studio, wait for Gradle sync.
-5. For a debug APK: **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
-6. Android Studio shows the generated APK location. For a signed release APK, use **Build > Generate Signed Bundle / APK**.
+## Build
+Requirements: Node.js 20+, Java 21, Android SDK, Android Studio (optional for local builds).
 
-## Data and privacy
-Customer data is stored locally in app/browser storage. It is not automatically uploaded to a cloud service. Use Backup data regularly and keep the backup file safe. Uninstalling the app or clearing app data can remove locally stored records.
+```bash
+npm install
+npx cap add android   # only for a new clone without android/ folder
+npx cap sync android
+cd android
+./gradlew assembleDebug
+```
+APK output: `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-## Notes
-- The app uses browser print support for PDF. On Android, choose **Save as PDF** in the system print dialog.
-- The Share statement action shares a concise text summary. PDF sharing can be done from the generated PDF in the Android share sheet after saving it.
-- This project ZIP is source code, not a prebuilt APK. An Android SDK build is required to produce the installable APK.
+For the existing GitHub repository, upload/replace the contents of this source archive in the repository while preserving the directory structure. Commit and run the existing GitHub Actions workflow. Download the generated APK artifact from Actions.
+
+## V2 build notes
+- The GitHub Actions workflow copies the supplied ledger/calculator/pen artwork into Android launcher icon density folders.
+- Date-only anniversary calculations use local calendar dates to avoid UTC timezone date shifts.
+- This remains a debug APK workflow. Android update installation also requires the new APK to be signed with the same signing certificate as the installed APK. GitHub-hosted ephemeral debug signing may differ between builds; if Android reports a signature conflict, do not uninstall until any required backup has been taken.
