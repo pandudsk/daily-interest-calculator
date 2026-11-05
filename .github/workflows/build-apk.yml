@@ -1,3 +1,4 @@
+
 name: Build Daily Interest Android APK
 
 on:
@@ -8,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,14 +34,94 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build debug APK
+      - name: Build Debug APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Prepare release signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          mkdir -p android/app/keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore/dintakurthi-release.jks
+          test -s android/app/keystore/dintakurthi-release.jks
+          chmod 600 android/app/keystore/dintakurthi-release.jks
+
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/app/build.gradle")
+          text = path.read_text()
+
+          if "signingConfigs {" in text:
+              raise SystemExit("Signing configuration already exists; stopping safely.")
+
+          pattern = r"(?m)^(\s*)buildTypes\s*\{"
+          match = re.search(pattern, text)
+
+          if not match:
+              raise SystemExit("Could not find buildTypes in build.gradle")
+
+          indent = match.group(1)
+          signing = (
+              indent + "signingConfigs {\n"
+              + indent + "    release {\n"
+              + indent + '        storeFile file("keystore/dintakurthi-release.jks")\n'
+              + indent + '        storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n'
+              + indent + '        keyAlias System.getenv("ANDROID_KEY_ALIAS")\n'
+              + indent + '        keyPassword System.getenv("ANDROID_KEY_PASSWORD")\n'
+              + indent + "    }\n"
+              + indent + "}\n\n"
+          )
+
+          text = text[:match.start()] + signing + text[match.start():]
+
+          release_pattern = r"(?m)^(\s*)release\s*\{"
+          start = text.find("buildTypes")
+          release_match = re.search(release_pattern, text[start:])
+
+          if not release_match:
+              raise SystemExit("Could not find release build type")
+
+          pos = start + release_match.end()
+          release_indent = release_match.group(1) + "    "
+          text = (
+              text[:pos]
+              + "\n" + release_indent + "signingConfig signingConfigs.release"
+              + text[pos:]
+          )
+
+          path.write_text(text)
+          PY
+
+      - name: Build Signed Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: daily-interest-calculator-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Signed Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-interest-calculator-signed-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
