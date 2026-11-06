@@ -87,7 +87,7 @@ jobs:
           if "signingConfigs {" in text:
               raise SystemExit("Signing configuration already exists; stopping safely.")
 
-          pattern = r"(?m)^(\s*)buildTypes\s*\\{"
+          pattern = r"(?m)^(\s*)buildTypes\s*[{]"
           match = re.search(pattern, text)
 
           if not match:
@@ -107,7 +107,7 @@ jobs:
 
           text = text[:match.start()] + signing + text[match.start():]
 
-          release_pattern = r"(?m)^(\s*)release\s*\\{"
+          release_pattern = r"(?m)^(\s*)release\s*[{]"
           start = text.find("buildTypes")
           release_match = re.search(release_pattern, text[start:])
 
