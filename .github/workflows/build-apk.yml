@@ -3,7 +3,7 @@ name: Build Daily Interest Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, release/v1.3-audit-share-print ]
 
 jobs:
   build:
@@ -87,7 +87,7 @@ jobs:
           if "signingConfigs {" in text:
               raise SystemExit("Signing configuration already exists; stopping safely.")
 
-          pattern = r"(?m)^(\s*)buildTypes\s*\{"
+          pattern = r"(?m)^(\\s*)buildTypes\\s*\\{"
           match = re.search(pattern, text)
 
           if not match:
@@ -95,19 +95,19 @@ jobs:
 
           indent = match.group(1)
           signing = (
-              indent + "signingConfigs {\n"
-              + indent + "    release {\n"
-              + indent + '        storeFile file("keystore/dintakurthi-release.jks")\n'
-              + indent + '        storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n'
-              + indent + '        keyAlias System.getenv("ANDROID_KEY_ALIAS")\n'
-              + indent + '        keyPassword System.getenv("ANDROID_KEY_PASSWORD")\n'
-              + indent + "    }\n"
-              + indent + "}\n\n"
+              indent + "signingConfigs {\\n"
+              + indent + "    release {\\n"
+              + indent + '        storeFile file("keystore/dintakurthi-release.jks")\\n'
+              + indent + '        storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\\n'
+              + indent + '        keyAlias System.getenv("ANDROID_KEY_ALIAS")\\n'
+              + indent + '        keyPassword System.getenv("ANDROID_KEY_PASSWORD")\\n'
+              + indent + "    }\\n"
+              + indent + "}\\n\\n"
           )
 
           text = text[:match.start()] + signing + text[match.start():]
 
-          release_pattern = r"(?m)^(\s*)release\s*\{"
+          release_pattern = r"(?m)^(\\s*)release\\s*\\{"
           start = text.find("buildTypes")
           release_match = re.search(release_pattern, text[start:])
 
@@ -118,7 +118,7 @@ jobs:
           release_indent = release_match.group(1) + "    "
           text = (
               text[:pos]
-              + "\n" + release_indent + "signingConfig signingConfigs.release"
+              + "\\n" + release_indent + "signingConfig signingConfigs.release"
               + text[pos:]
           )
 
