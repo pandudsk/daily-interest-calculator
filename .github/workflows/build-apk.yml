@@ -30,6 +30,9 @@ jobs:
       - name: Bundle native backup bridge
         run: npx esbuild src/native-backup.js --bundle --format=iife --global-name=NativeBackupBundle --outfile=www/native-backup.bundle.js
 
+      - name: Bundle native statement share bridge
+        run: npx esbuild src/native-share.js --bundle --format=iife --global-name=NativeShareBundle --outfile=www/native-share.bundle.js
+
       - name: Add Android platform
         run: npx cap add android
 
@@ -45,8 +48,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 6', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.5"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 7', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.6"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
