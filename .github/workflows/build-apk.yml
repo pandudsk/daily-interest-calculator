@@ -60,7 +60,6 @@ jobs:
               <foreground android:drawable="@drawable/ic_launcher_full" />
           </adaptive-icon>
           EOF
-          cp /tmp/app-icon-512.png android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.png
 
       - name: Apply branded Android launcher icon
         run: |
