@@ -63,43 +63,25 @@ jobs:
 
       - name: Apply branded Android launcher icon
         run: |
-          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-anydpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/values
-          cat > android/app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp" android:height="108dp"
-              android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#FFFEF8" android:strokeColor="#49305F" android:strokeWidth="2" android:pathData="M12,33 Q29,25 53,34 L53,83 Q31,75 12,82 Z"/>
-              <path android:fillColor="#F0E8D8" android:strokeColor="#49305F" android:strokeWidth="2" android:pathData="M53,34 Q78,25 96,33 L96,82 Q74,75 53,83 Z"/>
-              <path android:strokeColor="#B99C76" android:strokeWidth="2" android:pathData="M53,34 L53,83"/>
-              <path android:strokeColor="#D6C5AA" android:strokeWidth="1" android:pathData="M17,46 Q34,42 48,46 M17,54 Q34,50 48,54 M17,62 Q34,58 48,62 M59,46 Q77,42 91,46 M59,54 Q77,50 91,54 M59,62 Q77,58 91,62"/>
-              <path android:fillColor="#313944" android:strokeColor="#111827" android:strokeWidth="2" android:pathData="M19,42 L42,39 L47,70 L24,73 Z"/>
-              <path android:fillColor="#B9D0BD" android:pathData="M22,44 L40,42 L41,49 L23,51 Z"/>
-              <path android:fillColor="#0875D1" android:strokeColor="#064A91" android:strokeWidth="1.5" android:pathData="M76,23 Q80,22 81,26 L69,78 Q68,82 65,84 L64,78 Z"/>
-              <path android:fillColor="#D5D9E0" android:pathData="M64,78 L69,78 L65,87 Z"/>
-          </vector>
-          EOF
+          mkdir -p android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/drawable android/app/src/main/res/values
+          for spec in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
+            set -- $spec
+            density="$1"
+            pixels="$2"
+            rsvg-convert -w "$pixels" -h "$pixels" www/icon.svg > "android/app/src/main/res/mipmap-$density/ic_launcher.png"
+            cp "android/app/src/main/res/mipmap-$density/ic_launcher.png" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
+          done
+          rsvg-convert -w 512 -h 512 www/icon.svg > android/app/src/main/res/drawable/ic_launcher_full.png
           cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
           <resources><color name="ic_launcher_background">#6D35B5</color></resources>
           EOF
           cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@color/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+              <foreground android:drawable="@drawable/ic_launcher_full"/>
           </adaptive-icon>
           EOF
           cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-          cat > android/app/src/main/res/mipmap-anydpi/ic_launcher.xml <<'EOF'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#6D35B5" android:pathData="M0,0 H108 V108 H0 Z"/>
-              <path android:fillColor="#FFFEF8" android:strokeColor="#49305F" android:strokeWidth="2" android:pathData="M12,33 Q29,25 53,34 L53,83 Q31,75 12,82 Z"/>
-              <path android:fillColor="#F0E8D8" android:strokeColor="#49305F" android:strokeWidth="2" android:pathData="M53,34 Q78,25 96,33 L96,82 Q74,75 53,83 Z"/>
-              <path android:fillColor="#313944" android:pathData="M19,42 L42,39 L47,70 L24,73 Z"/>
-              <path android:fillColor="#B9D0BD" android:pathData="M22,44 L40,42 L41,49 L23,51 Z"/>
-              <path android:fillColor="#0875D1" android:pathData="M76,23 Q80,22 81,26 L69,78 L65,84 L64,78 Z"/>
-          </vector>
-          EOF
-          cp android/app/src/main/res/mipmap-anydpi/ic_launcher.xml android/app/src/main/res/mipmap-anydpi/ic_launcher_round.xml
-
 
       - name: Set App Version
         run: |
