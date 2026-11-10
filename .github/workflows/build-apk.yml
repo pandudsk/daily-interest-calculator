@@ -39,6 +39,29 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Generate Android launcher icon assets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26
+          rsvg-convert -w 512 -h 512 www/icon.svg > /tmp/app-icon-512.png
+          rsvg-convert -w 48 -h 48 www/icon.svg > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          rsvg-convert -w 72 -h 72 www/icon.svg > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          rsvg-convert -w 96 -h 96 www/icon.svg > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          rsvg-convert -w 144 -h 144 www/icon.svg > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          rsvg-convert -w 192 -h 192 www/icon.svg > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp /tmp/app-icon-512.png android/app/src/main/res/drawable/ic_launcher_full.png
+          cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
+          <resources><color name="ic_launcher_background">#6D35B5</color></resources>
+          EOF
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/ic_launcher_background" />
+              <foreground android:drawable="@drawable/ic_launcher_full" />
+          </adaptive-icon>
+          EOF
+          cp /tmp/app-icon-512.png android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.png
+
       - name: Apply branded Android launcher icon
         run: |
           mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-anydpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/values
