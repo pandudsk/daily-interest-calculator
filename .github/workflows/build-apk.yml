@@ -33,11 +33,70 @@ jobs:
       - name: Bundle native statement share bridge
         run: npx esbuild src/native-share.js --bundle --format=iife --global-name=NativeShareBundle --outfile=www/native-share.bundle.js
 
+      - name: Bundle native print bridge
+        run: npx esbuild src/native-print.js --bundle --format=iife --global-name=NativePrintBundle --outfile=www/native-print.bundle.js
+
       - name: Add Android platform
         run: npx cap add android
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Add native Android PrintManager plugin
+        run: |
+          mkdir -p android/app/src/main/java/com/dintakurthi/dailyinterest
+          cat > android/app/src/main/java/com/dintakurthi/dailyinterest/NativePrintPlugin.java <<'JAVA'
+          package com.dintakurthi.dailyinterest;
+          import android.content.Context;
+          import android.print.PrintAttributes;
+          import android.print.PrintManager;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          @CapacitorPlugin(name="NativePrint")
+          public class NativePrintPlugin extends Plugin {
+           @PluginMethod public void print(PluginCall call) {
+            final String html=call.getString("html","");
+            final String title=call.getString("title","Daily Interest Statement");
+            final String paper=call.getString("paperSize","A4");
+            if(html.isEmpty()){call.reject("Print content is empty");return;}
+            getActivity().runOnUiThread(()->{
+             try {
+              WebView printView=new WebView(getContext());
+              printView.getSettings().setJavaScriptEnabled(false);
+              printView.setWebViewClient(new WebViewClient(){
+               @Override public void onPageFinished(WebView view,String url){
+                PrintManager pm=(PrintManager)getContext().getSystemService(Context.PRINT_SERVICE);
+                PrintAttributes.MediaSize media=PrintAttributes.MediaSize.ISO_A4;
+                if("58mm".equals(paper)) media=new PrintAttributes.MediaSize("THERMAL_58","58mm Thermal",2283,11000);
+                else if("80mm".equals(paper)) media=new PrintAttributes.MediaSize("THERMAL_80","80mm Thermal",3150,11000);
+                PrintAttributes attrs=new PrintAttributes.Builder().setMediaSize(media).setResolution(new PrintAttributes.Resolution("default","Default",300,300)).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build();
+                pm.print(title,view.createPrintDocumentAdapter(title),attrs);
+                JSObject result=new JSObject();result.put("started",true);call.resolve(result);
+               }
+              });
+              printView.loadDataWithBaseURL(null,html,"text/html","UTF-8",null);
+             } catch(Exception e){call.reject("Android print service failed",e);}
+            });
+           }
+          }
+          JAVA
+          cat > android/app/src/main/java/com/dintakurthi/dailyinterest/MainActivity.java <<'JAVA'
+          package com.dintakurthi.dailyinterest;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override public void onCreate(Bundle savedInstanceState) {
+              registerPlugin(NativePrintPlugin.class);
+              super.onCreate(savedInstanceState);
+            }
+          }
+          JAVA
+
 
       - name: Generate Android launcher icon assets
         run: |
@@ -92,8 +151,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 10', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.9"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 11', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.10"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
