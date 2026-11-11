@@ -208,8 +208,7 @@ jobs:
 
       - name: Prepare padded launcher icon from the existing artwork
         run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
+          command -v convert
           # Keep the original artwork; only scale it down and add safe purple margins.
           cp www/assets/app-icon.png /tmp/app-icon-original.png
           convert /tmp/app-icon-original.png -resize 790x790 -background "#6D35B5" -gravity center -extent 1024x1024 www/assets/app-icon-padded.png
