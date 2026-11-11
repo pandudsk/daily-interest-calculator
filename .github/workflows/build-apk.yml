@@ -42,6 +42,74 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Register native Android PrintManager plugin
+        run: |
+          mkdir -p android/app/src/main/java/com/dintakurthi/dailyinterest
+          cat > android/app/src/main/java/com/dintakurthi/dailyinterest/MainActivity.java <<'EOF'
+          package com.dintakurthi.dailyinterest;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(NativePrintPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          EOF
+          cat > android/app/src/main/java/com/dintakurthi/dailyinterest/NativePrintPlugin.java <<'EOF'
+          package com.dintakurthi.dailyinterest;
+          import android.content.Context;
+          import android.print.PrintAttributes;
+          import android.print.PrintManager;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          @CapacitorPlugin(name = "NativePrint")
+          public class NativePrintPlugin extends Plugin {
+              private WebView printWebView;
+              @PluginMethod
+              public void print(PluginCall call) {
+                  final String html = call.getString("html");
+                  final String title = call.getString("title", "Daily Interest Statement");
+                  final String paper = call.getString("paperSize", "A4");
+                  if (html == null || html.trim().isEmpty()) {
+                      call.reject("Print content is empty");
+                      return;
+                  }
+                  getActivity().runOnUiThread(() -> {
+                      try {
+                          PrintManager manager = (PrintManager) getContext().getSystemService(Context.PRINT_SERVICE);
+                          if (manager == null) { call.reject("Android Print Service is unavailable"); return; }
+                          printWebView = new WebView(getContext());
+                          printWebView.setBackgroundColor(android.graphics.Color.WHITE);
+                          printWebView.setWebViewClient(new WebViewClient() {
+                              @Override
+                              public void onPageFinished(WebView view, String url) {
+                                  try {
+                                      PrintAttributes.MediaSize media = PrintAttributes.MediaSize.ISO_A4;
+                                      if ("58mm".equals(paper)) media = new PrintAttributes.MediaSize("THERMAL_58", "58mm Thermal", 2280, 100000);
+                                      else if ("80mm".equals(paper)) media = new PrintAttributes.MediaSize("THERMAL_80", "80mm Thermal", 3150, 100000);
+                                      PrintAttributes attributes = new PrintAttributes.Builder()
+                                          .setMediaSize(media)
+                                          .setResolution(new PrintAttributes.Resolution("daily_interest", "Default", 300, 300))
+                                          .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                          .build();
+                                      manager.print(title, view.createPrintDocumentAdapter(title), attributes);
+                                      call.resolve();
+                                  } catch (Exception ex) { call.reject("Unable to open Android print dialog", ex); }
+                              }
+                          });
+                          printWebView.loadDataWithBaseURL("https://localhost/", html, "text/html", "UTF-8", null);
+                      } catch (Exception ex) { call.reject("Unable to start Android printing", ex); }
+                  });
+              }
+          }
+          EOF
+
       - name: Add native Android PrintManager plugin
         run: |
           mkdir -p android/app/src/main/java/com/dintakurthi/dailyinterest
