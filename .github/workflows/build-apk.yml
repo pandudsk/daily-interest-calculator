@@ -204,7 +204,7 @@ jobs:
           mkdir -p android/app/src/main/res/drawable android/app/src/main/res/values
           cat > android/app/src/main/res/drawable/launch_background.xml <<'EOF'
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-            <item android:drawable="#6D35B5" />
+            <item><shape android:shape="rectangle"><solid android:color="#6D35B5" /></shape></item>
           </layer-list>
           EOF
           cat > android/app/src/main/res/values/styles.xml <<'EOF'
