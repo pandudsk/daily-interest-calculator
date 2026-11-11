@@ -213,16 +213,16 @@ jobs:
           # Keep the original artwork; only scale it down and add safe purple margins.
           cp www/assets/app-icon.png /tmp/app-icon-original.png
           convert /tmp/app-icon-original.png -resize 790x790 -background "#6D35B5" -gravity center -extent 1024x1024 www/assets/app-icon-padded.png
-          cp www/assets/app-icon-padded.png www/assets/app-icon.png
+          
           mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/values
           for spec in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
             set -- $spec
             density="$1"
             pixels="$2"
-            convert "www/assets/app-icon.png" -resize "${pixels}x${pixels}" -gravity center -background "#6D35B5" -extent "${pixels}x${pixels}" "android/app/src/main/res/mipmap-${density}/ic_launcher.png"
+            convert "www/assets/app-icon-padded.png" -resize "${pixels}x${pixels}" -gravity center -background "#6D35B5" -extent "${pixels}x${pixels}" "android/app/src/main/res/mipmap-${density}/ic_launcher.png"
             cp "android/app/src/main/res/mipmap-${density}/ic_launcher.png" "android/app/src/main/res/mipmap-${density}/ic_launcher_round.png"
           done
-          convert "www/assets/app-icon.png" -resize 432x432 -gravity center -background "#6D35B5" -extent 432x432 android/app/src/main/res/drawable/ic_launcher_full.png
+          convert "www/assets/app-icon-padded.png" -resize 432x432 -gravity center -background "#6D35B5" -extent 432x432 android/app/src/main/res/drawable/ic_launcher_full.png
           npx cap copy android
 
       - name: Set purple Android launch background
