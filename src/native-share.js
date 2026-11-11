@@ -92,7 +92,7 @@ async function shareStatement(data) {
   const customerName=data.customerName;
   const pages = renderStatementPages(data).map(base64ToBytes);
   const pdf = makePdfFromJpegs(pages, 1240, 1754);
-  const safeName = String(customerName || 'customer').trim().replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'customer';
+  const safeName = String(customerName || 'customer').trim().replace(/[^\p{L}\p{N}-]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'customer';
   const shareDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
   const filename = `${safeName}_${shareDate}.pdf`;
   if (Capacitor.isNativePlatform()) {
