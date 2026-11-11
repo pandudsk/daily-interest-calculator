@@ -16,7 +16,7 @@ Application ID: `com.dintakurthi.dailyinterest`
 3. Firebase Authentication: connect the supplied Firebase Android project configuration; implement email/password, email verification/password reset, phone OTP with reCAPTCHA, and Android-compatible Google sign-in. Do not mark a provider ready until enabled and tested in Firebase Console and on-device.
 4. User data isolation and migration: give each account its own Firestore path; preserve local-first operation; migrate existing local records only after the signed-in user explicitly confirms ownership; never silently upload device data to another account.
 5. Cloud sync and recovery: implement queued offline writes, reconnect sync, conflict handling, backup/restore, and restrictive Firestore security rules; verify cross-account isolation.
-6. Regression testing: test ledger calculations, annual compounding, customer CRUD, Telugu/English, CSV, backup/restore, Store Profile, Open Statement preview, and unchanged Share Statement PDF/print.
+6. Keyboard and regression testing: ensure Android system keyboard language switching (spacebar long-press) remains available in text fields; preserve numeric keyboards for amount/rate fields; test ledger calculations, annual compounding, customer CRUD, Telugu/English, CSV, backup/restore, Store Profile, About version display, Open Statement preview, and unchanged Share Statement PDF/print.
 7. Release: increment versionCode, build debug and signed release APK with the existing keystore, verify signing, install/update test without uninstalling, and confirm existing local data survives.
 
 ## Firebase Console prerequisites
@@ -28,5 +28,6 @@ Application ID: `com.dintakurthi.dailyinterest`
 
 ## Status at this checkpoint
 - Splash layout update committed in this development branch.
+- About version display fallback and Android bundle copy of generated version metadata committed; validate in the next APK.
 - CI launcher-icon padding step committed; source artwork in Git remains unchanged.
 - Login/Registration, Firebase connection, Firestore sync, data migration, and device regression tests remain pending.
