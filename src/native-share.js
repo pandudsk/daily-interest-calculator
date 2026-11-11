@@ -48,11 +48,14 @@ function renderStatementPages(data) {
     canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;ctx=canvas.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#51258f';ctx.fillRect(0,0,W,18);
-    ctx.fillStyle='#241b2d';ctx.font='bold 34px Arial, sans-serif';ctx.fillText('DAILY INTEREST STATEMENT',M,82);
-    ctx.fillStyle='#766b84';ctx.font='25px Arial, sans-serif';ctx.fillText(String(data.customerName||''),M,125);
-    ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
-    ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,190);ctx.lineTo(W-M,190);ctx.stroke();
-    y=224;pageNo++;
+    pageNo++;
+    if(pageNo===1){
+      ctx.fillStyle='#241b2d';ctx.font='bold 34px Arial, sans-serif';ctx.fillText('DAILY INTEREST STATEMENT',M,82);
+      ctx.fillStyle='#766b84';ctx.font='25px Arial, sans-serif';ctx.fillText(String(data.customerName||''),M,125);
+      ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
+      ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,190);ctx.lineTo(W-M,190);ctx.stroke();
+      y=224;
+    } else { y=82; }
   }
   function footer(){ctx.fillStyle='#766b84';ctx.font='18px Arial';ctx.fillText("Dintakurthi's Finsol  •  Page "+pageNo,W-M-250,H-30);pages.push(canvas.toDataURL('image/jpeg',0.9).split(',')[1]);}
   function ensure(h){if(y+h>H-75){footer();newPage()}}
@@ -89,8 +92,9 @@ async function shareStatement(data) {
   const customerName=data.customerName;
   const pages = renderStatementPages(data).map(base64ToBytes);
   const pdf = makePdfFromJpegs(pages, 1240, 1754);
-  const safeName = String(customerName || 'customer').replace(/[^\w-]+/g, '_').slice(0, 40) || 'customer';
-  const filename = `Statement_${safeName}_${Date.now()}.pdf`;
+  const safeName = String(customerName || 'customer').trim().replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'customer';
+  const shareDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+  const filename = `${safeName}_${shareDate}.pdf`;
   if (Capacitor.isNativePlatform()) {
     const saved = await Filesystem.writeFile({ path: filename, data: bytesToBase64(pdf), directory: Directory.Cache, recursive: true });
     await Share.share({ title: `Daily Interest Statement - ${customerName}`, text: 'Customer ledger statement PDF', url: saved.uri, dialogTitle: 'Share PDF Statement' });
