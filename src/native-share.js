@@ -52,12 +52,9 @@ function renderStatementPages(data) {
     if(pageNo===1){
       ctx.fillStyle='#241b2d';ctx.font='bold 34px Arial, sans-serif';ctx.fillText('DAILY INTEREST STATEMENT',M,82);
       ctx.fillStyle='#766b84';ctx.font='25px Arial, sans-serif';ctx.fillText(String(data.customerName||''),M,125);
-      const profile=data.storeProfile||{};ctx.font='19px Arial, sans-serif';ctx.fillStyle='#766b84';
-      const business=[profile.storeName,profile.ownerName?'Owner: '+profile.ownerName:'',profile.contact?'Contact: '+profile.contact:'',profile.email||''].filter(Boolean).join('  |  ');
-      if(business)ctx.fillText(business.slice(0,105),M,157);
-      ctx.fillStyle='#766b84';ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,business?195:164);
-      ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,business?218:190);ctx.lineTo(W-M,business?218:190);ctx.stroke();
-      y=business?252:224;
+      ctx.fillStyle='#766b84';ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
+      ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,190);ctx.lineTo(W-M,190);ctx.stroke();
+      y=224;
     } else { y=82; }
   }
   function footer(){ctx.fillStyle='#766b84';ctx.font='18px Arial';ctx.fillText("Dintakurthi's Finsol  •  Page "+pageNo,W-M-250,H-30);pages.push(canvas.toDataURL('image/jpeg',0.9).split(',')[1]);}
