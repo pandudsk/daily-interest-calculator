@@ -223,6 +223,7 @@ jobs:
             cp "android/app/src/main/res/mipmap-${density}/ic_launcher.png" "android/app/src/main/res/mipmap-${density}/ic_launcher_round.png"
           done
           convert "www/assets/app-icon.png" -resize 432x432 -gravity center -background "#6D35B5" -extent 432x432 android/app/src/main/res/drawable/ic_launcher_full.png
+          npx cap copy android
 
       - name: Set purple Android launch background
         run: |
