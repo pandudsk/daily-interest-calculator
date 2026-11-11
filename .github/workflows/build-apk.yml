@@ -236,8 +236,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 19', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.18"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 20', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.19"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -248,7 +248,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.18", code: 19 };
+          window.APP_VERSION = { name: "1.19", code: 20 };
           EOF
 
       - name: Build Debug APK
