@@ -199,6 +199,26 @@ jobs:
           EOF
           cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
+      - name: Set purple Android launch background
+        run: |
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/values
+          cat > android/app/src/main/res/drawable/launch_background.xml <<'EOF'
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+            <item android:drawable="#6D35B5" />
+          </layer-list>
+          EOF
+          cat > android/app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+            <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+              <item name="android:fontFamily">sans</item>
+              <item name="android:colorAccent">#6D35B5</item>
+              <item name="android:windowBackground">@drawable/launch_background</item>
+              <item name="android:statusBarColor">#6D35B5</item>
+              <item name="android:navigationBarColor">#51258F</item>
+            </style>
+          </resources>
+          EOF
+
       - name: Set App Version
         run: |
           python3 - <<'PY'
@@ -208,14 +228,20 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 18', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.17"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 19', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.18"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
 
           path.write_text(text)
           PY
+
+      - name: Generate app version metadata
+        run: |
+          cat > www/app-version.js <<'EOF'
+          window.APP_VERSION = { name: "1.18", code: 19 };
+          EOF
 
       - name: Build Debug APK
         working-directory: android
