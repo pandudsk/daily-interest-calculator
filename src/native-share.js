@@ -34,40 +34,46 @@ function makePdfFromJpegs(jpegs, width, height) {
   parts.push(bytesFromString(xref));
   return joinBytes(parts);
 }
-function renderStatementPages(customerName, statementText) {
-  const width = 1240, height = 1754, margin = 90, lineHeight = 42;
-  const probe = document.createElement('canvas').getContext('2d');
-  probe.font = '28px "Noto Sans Telugu", Arial, sans-serif';
-  const maxWidth = width - margin * 2, lines = [];
-  for (const raw of statementText.split(/\r?\n/)) {
-    if (!raw) { lines.push(''); continue; }
-    let line = '';
-    for (const word of raw.split(/\s+/)) {
-      const candidate = line ? line + ' ' + word : word;
-      if (line && probe.measureText(candidate).width > maxWidth) { lines.push(line); line = word; }
-      else line = candidate;
-    }
-    lines.push(line);
+function renderStatementPages(data) {
+  const W=1240,H=1754,M=64, pages=[];
+  const money=n=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2}).format(Number(n)||0);
+  const date=s=>{if(!s)return '—';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})};
+  const sections=[
+    {title:'APPULU / CREDIT LEDGER',rows:(data.appulu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
+    {title:'JAMALU / DEBIT LEDGER',rows:(data.jamalu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
+    {title:'TRANSACTION HISTORY',rows:(data.transactions||[]).map(t=>[date(t.date),t.type==='credit'?'APPULU / CREDIT':'JAMALU / DEBIT',money(t.amount)])}
+  ];
+  let pageNo=0,ctx,canvas,y;
+  function newPage(){
+    canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#51258f';ctx.fillRect(0,0,W,18);
+    ctx.fillStyle='#241b2d';ctx.font='bold 34px Arial, sans-serif';ctx.fillText('DAILY INTEREST STATEMENT',M,82);
+    ctx.fillStyle='#766b84';ctx.font='25px Arial, sans-serif';ctx.fillText(String(data.customerName||''),M,125);
+    ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
+    ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,190);ctx.lineTo(W-M,190);ctx.stroke();
+    y=224;pageNo++;
   }
-  const perPage = Math.floor((height - margin * 2 - 115) / lineHeight);
-  const pages = [];
-  for (let p = 0; p < lines.length; p += perPage) {
-    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#51258f'; ctx.font = 'bold 34px "Noto Sans Telugu", Arial, sans-serif';
-    ctx.fillText('DAILY INTEREST STATEMENT', margin, 95);
-    ctx.fillStyle = '#766b84'; ctx.font = '24px "Noto Sans Telugu", Arial, sans-serif';
-    ctx.fillText(customerName, margin, 140);
-    ctx.strokeStyle = '#d9c9ed'; ctx.beginPath(); ctx.moveTo(margin, 170); ctx.lineTo(width - margin, 170); ctx.stroke();
-    ctx.fillStyle = '#241b2d'; ctx.font = '28px "Noto Sans Telugu", Arial, sans-serif';
-    const pageLines = lines.slice(p, p + perPage);
-    pageLines.forEach((line, idx) => ctx.fillText(line, margin, 225 + idx * lineHeight));
-    ctx.fillStyle = '#766b84'; ctx.font = '20px Arial, sans-serif';
-    ctx.fillText(`Page ${pages.length + 1}`, width - margin - 100, height - 45);
-    pages.push(canvas.toDataURL('image/jpeg', 0.88).split(',')[1]);
+  function footer(){ctx.fillStyle='#766b84';ctx.font='18px Arial';ctx.fillText("Dintakurthi's Finsol  •  Page "+pageNo,W-M-250,H-30);pages.push(canvas.toDataURL('image/jpeg',0.9).split(',')[1]);}
+  function ensure(h){if(y+h>H-75){footer();newPage()}}
+  function heading(t){ensure(64);ctx.fillStyle='#51258f';ctx.font='bold 25px Arial';ctx.fillText(t,M,y);y+=38}
+  function table(headers,rows,widths){
+    const total=W-2*M, rowH=44, colW=widths.map(v=>total*v);
+    ensure(48);ctx.fillStyle='#eee6f8';ctx.fillRect(M,y,total,42);ctx.fillStyle='#3b2450';ctx.font='bold 17px Arial';
+    let x=M;headers.forEach((h,i)=>{ctx.fillText(h,x+8,y+27);x+=colW[i]});y+=42;
+    rows.forEach((r,ri)=>{ensure(rowH);ctx.fillStyle=ri%2?'#fff':'#faf8fd';ctx.fillRect(M,y,total,rowH);ctx.strokeStyle='#e5deec';ctx.beginPath();ctx.moveTo(M,y+rowH);ctx.lineTo(W-M,y+rowH);ctx.stroke();ctx.fillStyle='#30283a';ctx.font='16px Arial';let xx=M;r.forEach((v,i)=>{let text=String(v??'');while(ctx.measureText(text).width>colW[i]-14&&text.length>4)text=text.slice(0,-2)+'…';ctx.fillText(text,xx+7,y+27);xx+=colW[i]});y+=rowH});
+    y+=22;
   }
-  return pages;
+  newPage();
+  heading('ACCOUNT SUMMARY');
+  table(['Description','Appulu / Credit','Jamalu / Debit'],[['Principal',money(data.appulu?.principal),money(data.jamalu?.principal)],['Interest',money(data.appulu?.interest),money(data.jamalu?.interest)],['Total with interest',money(data.appulu?.total),money(data.jamalu?.total)]],[0.42,0.29,0.29]);
+  heading('FINAL SETTLEMENT');
+  table(['Particulars','Amount'],[['Appulu total with interest',money(data.appulu?.total)],['Less: Jamalu total with interest',money(data.jamalu?.total)],['Net settlement',money((data.appulu?.total||0)-(data.jamalu?.total||0))]],[0.68,0.32]);
+  sections.forEach(sec=>{heading(sec.title);if(!sec.rows.length){ctx.fillStyle='#766b84';ctx.font='20px Arial';ctx.fillText('No entries',M,y);y+=48;return}
+    if(sec.title==='TRANSACTION HISTORY')table(['Date','Transaction type','Amount'],sec.rows,[0.28,0.48,0.24]);
+    else table(['Date','Days','Opening','Interest','Added','Closing','Details'],sec.rows,[0.15,0.08,0.15,0.14,0.13,0.15,0.20]);
+  });
+  footer();return pages;
 }
 function base64ToBytes(base64) {
   const binary = atob(base64), out = new Uint8Array(binary.length);
@@ -79,8 +85,9 @@ function bytesToBase64(bytes) {
   for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(binary);
 }
-async function shareStatement(customerName, statementText) {
-  const pages = renderStatementPages(customerName, statementText).map(base64ToBytes);
+async function shareStatement(data) {
+  const customerName=data.customerName;
+  const pages = renderStatementPages(data).map(base64ToBytes);
   const pdf = makePdfFromJpegs(pages, 1240, 1754);
   const safeName = String(customerName || 'customer').replace(/[^\w-]+/g, '_').slice(0, 40) || 'customer';
   const filename = `Statement_${safeName}_${Date.now()}.pdf`;
