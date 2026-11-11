@@ -88,22 +88,39 @@ function bytesToBase64(bytes) {
   for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(binary);
 }
-async function shareStatement(data) {
+async function generateStatement(data) {
   const customerName=data.customerName;
   const pages = renderStatementPages(data).map(base64ToBytes);
   const pdf = makePdfFromJpegs(pages, 1240, 1754);
   const safeName = String(customerName || 'customer').trim().replace(/[^\p{L}\p{N}-]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'customer';
   const shareDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
   const filename = `${safeName}_${shareDate}.pdf`;
+  const base64=bytesToBase64(pdf);
+  const prepared={filename,title:`Daily Interest Statement - ${customerName}`,base64,pages:renderStatementPages(data)};
   if (Capacitor.isNativePlatform()) {
-    const saved = await Filesystem.writeFile({ path: filename, data: bytesToBase64(pdf), directory: Directory.Cache, recursive: true });
-    await Share.share({ title: `Daily Interest Statement - ${customerName}`, text: 'Customer ledger statement PDF', url: saved.uri, dialogTitle: 'Share PDF Statement' });
-    return true;
+    const saved=await Filesystem.writeFile({path:filename,data:base64,directory:Directory.Cache,recursive:true});
+    prepared.uri=saved.uri;
+  } else {
+    prepared.blob=new Blob([pdf],{type:'application/pdf'});
+    prepared.url=URL.createObjectURL(prepared.blob);
   }
-  const blob = new Blob([pdf], { type: 'application/pdf' });
-  const file = new File([blob], filename, { type: 'application/pdf' });
-  if (navigator.canShare?.({ files: [file] }) && navigator.share) await navigator.share({ files: [file], title: `Daily Interest Statement - ${customerName}` });
-  else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url); }
+  return prepared;
+}
+async function sharePrepared(prepared) {
+  if (!prepared) throw new Error('Generate the statement first');
+  if (Capacitor.isNativePlatform()) await Share.share({title:prepared.title,text:'Customer ledger statement PDF',url:prepared.uri,dialogTitle:'Share PDF Statement'});
+  else {
+    const file=new File([prepared.blob],prepared.filename,{type:'application/pdf'});
+    if(navigator.canShare?.({files:[file]})&&navigator.share) await navigator.share({files:[file],title:prepared.title});
+    else downloadPrepared(prepared);
+  }
   return true;
 }
-window.NativeShare = { shareStatement };
+function downloadPrepared(prepared) {
+  if(!prepared) throw new Error('Generate the statement first');
+  if(prepared.blob){const a=document.createElement('a');a.href=prepared.url;a.download=prepared.filename;a.click();}
+  else throw new Error('Download from Android preview is not available yet; use Share to save the PDF.');
+  return true;
+}
+async function shareStatement(data){const prepared=await generateStatement(data);await sharePrepared(prepared);return true;}
+window.NativeShare = { generateStatement, sharePrepared, downloadPrepared, shareStatement };
