@@ -147,8 +147,8 @@ jobs:
                android.print.PrintDocumentInfo info=new android.print.PrintDocumentInfo.Builder(title+".pdf").setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT).setPageCount(pageCount).build();
                cb.onLayoutFinished(info,true);
               }
-              @Override public void onWrite(android.print.PageRange[] ranges,java.io.FileDescriptor destination,android.os.CancellationSignal cancel,WriteResultCallback cb){
-               try(java.io.InputStream in=new java.io.FileInputStream(pdfFile);java.io.OutputStream out=new java.io.FileOutputStream(destination)){
+              @Override public void onWrite(android.print.PageRange[] ranges,android.os.ParcelFileDescriptor destination,android.os.CancellationSignal cancel,WriteResultCallback cb){
+               try(java.io.InputStream in=new java.io.FileInputStream(pdfFile);java.io.OutputStream out=new java.io.FileOutputStream(destination.getFileDescriptor())){
                 byte[] buffer=new byte[16384];int n;while((n=in.read(buffer))>0){if(cancel.isCanceled()){cb.onWriteCancelled();return;}out.write(buffer,0,n);}out.flush();cb.onWriteFinished(new android.print.PageRange[]{android.print.PageRange.ALL_PAGES});
                }catch(Exception e){cb.onWriteFailed(e.getMessage());}
               }
