@@ -175,39 +175,19 @@ jobs:
           JAVA
 
 
-      - name: Generate Android launcher icon assets
+      - name: Generate Android launcher icons from approved PNG
         run: |
           sudo apt-get update
-          sudo apt-get install -y librsvg2-bin
-          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26
-          rsvg-convert -w 512 -h 512 www/icon.svg > /tmp/app-icon-512.png
-          rsvg-convert -w 48 -h 48 www/icon.svg > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          rsvg-convert -w 72 -h 72 www/icon.svg > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          rsvg-convert -w 96 -h 96 www/icon.svg > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          rsvg-convert -w 144 -h 144 www/icon.svg > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          rsvg-convert -w 192 -h 192 www/icon.svg > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          cp /tmp/app-icon-512.png android/app/src/main/res/drawable/ic_launcher_full.png
-          cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
-          <resources><color name="ic_launcher_background">#6D35B5</color></resources>
-          EOF
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/ic_launcher_background" />
-              <foreground android:drawable="@drawable/ic_launcher_full" />
-          </adaptive-icon>
-          EOF
-
-      - name: Apply branded Android launcher icon
-        run: |
-          mkdir -p android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/drawable android/app/src/main/res/values
+          sudo apt-get install -y imagemagick
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/values
           for spec in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
             set -- $spec
             density="$1"
             pixels="$2"
-            rsvg-convert -w "$pixels" -h "$pixels" www/icon.svg > "android/app/src/main/res/mipmap-$density/ic_launcher.png"
-            cp "android/app/src/main/res/mipmap-$density/ic_launcher.png" "android/app/src/main/res/mipmap-$density/ic_launcher_round.png"
+            convert "www/assets/app-icon.png" -resize "${pixels}x${pixels}" -gravity center -background "#6D35B5" -extent "${pixels}x${pixels}" "android/app/src/main/res/mipmap-${density}/ic_launcher.png"
+            cp "android/app/src/main/res/mipmap-${density}/ic_launcher.png" "android/app/src/main/res/mipmap-${density}/ic_launcher_round.png"
           done
-          rsvg-convert -w 512 -h 512 www/icon.svg > android/app/src/main/res/drawable/ic_launcher_full.png
+          convert "www/assets/app-icon.png" -resize 432x432 -gravity center -background "#6D35B5" -extent 432x432 android/app/src/main/res/drawable/ic_launcher_full.png
           cat > android/app/src/main/res/values/ic_launcher_background.xml <<'EOF'
           <resources><color name="ic_launcher_background">#6D35B5</color></resources>
           EOF
@@ -228,8 +208,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 12', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.11"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 13', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.12"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
