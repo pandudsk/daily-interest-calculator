@@ -156,11 +156,20 @@ jobs:
           cat > android/app/src/main/java/com/dintakurthi/dailyinterest/MainActivity.java <<'JAVA'
           package com.dintakurthi.dailyinterest;
           import android.os.Bundle;
+          import android.graphics.Color;
+          import android.view.View;
+          import android.view.WindowManager;
+          import androidx.core.view.WindowCompat;
           import com.getcapacitor.BridgeActivity;
           public class MainActivity extends BridgeActivity {
             @Override public void onCreate(Bundle savedInstanceState) {
               registerPlugin(NativePrintPlugin.class);
               super.onCreate(savedInstanceState);
+              getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+              WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+              getWindow().setStatusBarColor(Color.rgb(109, 53, 181));
+              getWindow().setNavigationBarColor(Color.rgb(81, 37, 143));
+              getWindow().getDecorView().setSystemUiVisibility(0);
             }
           }
           JAVA
@@ -219,8 +228,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 11', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.10"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 12', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.11"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
