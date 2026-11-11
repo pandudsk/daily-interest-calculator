@@ -90,13 +90,14 @@ function bytesToBase64(bytes) {
 }
 async function generateStatement(data) {
   const customerName=data.customerName;
-  const pages = renderStatementPages(data).map(base64ToBytes);
+  const pageImages = renderStatementPages(data);
+  const pages = pageImages.map(base64ToBytes);
   const pdf = makePdfFromJpegs(pages, 1240, 1754);
   const safeName = String(customerName || 'customer').trim().replace(/[^\p{L}\p{N}-]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'customer';
   const shareDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
   const filename = `${safeName}_${shareDate}.pdf`;
   const base64=bytesToBase64(pdf);
-  const prepared={filename,title:`Daily Interest Statement - ${customerName}`,base64,pages:renderStatementPages(data)};
+  const prepared={filename,title:`Daily Interest Statement - ${customerName}`,base64,pages:pageImages};
   if (Capacitor.isNativePlatform()) {
     const saved=await Filesystem.writeFile({path:filename,data:base64,directory:Directory.Cache,recursive:true});
     prepared.uri=saved.uri;
@@ -116,11 +117,10 @@ async function sharePrepared(prepared) {
   }
   return true;
 }
-function downloadPrepared(prepared) {
+async function downloadPrepared(prepared) {
   if(!prepared) throw new Error('Generate the statement first');
-  if(prepared.blob){const a=document.createElement('a');a.href=prepared.url;a.download=prepared.filename;a.click();}
-  else throw new Error('Download from Android preview is not available yet; use Share to save the PDF.');
-  return true;
+  if(prepared.blob){const a=document.createElement('a');a.href=prepared.url;a.download=prepared.filename;a.click();return true;}
+  return Filesystem.writeFile({path:`Download/${prepared.filename}`,data:prepared.base64,directory:Directory.Documents,recursive:true});
 }
 async function shareStatement(data){const prepared=await generateStatement(data);await sharePrepared(prepared);return true;}
 window.NativeShare = { generateStatement, sharePrepared, downloadPrepared, shareStatement };
