@@ -127,7 +127,38 @@ jobs:
           import com.getcapacitor.annotation.CapacitorPlugin;
           @CapacitorPlugin(name="NativePrint")
           public class NativePrintPlugin extends Plugin {
-           @PluginMethod public void print(PluginCall call) {
+           @PluginMethod public void printPdf(PluginCall call) {
+           final String base64=call.getString("base64","");
+           final String title=call.getString("title","Daily Interest Statement");
+           if(base64.isEmpty()){call.reject("PDF content is empty");return;}
+           getActivity().runOnUiThread(()->{
+            java.io.File source=null;
+            try {
+             byte[] bytes=android.util.Base64.decode(base64,android.util.Base64.DEFAULT);
+             source=new java.io.File(getContext().getCacheDir(),"statement-print-"+System.currentTimeMillis()+".pdf");
+             try(java.io.FileOutputStream out=new java.io.FileOutputStream(source)){out.write(bytes);}
+             final java.io.File pdfFile=source;
+             android.print.PrintManager pm=(android.print.PrintManager)getContext().getSystemService(Context.PRINT_SERVICE);
+             android.graphics.pdf.PdfRenderer renderer=new android.graphics.pdf.PdfRenderer(android.os.ParcelFileDescriptor.open(pdfFile,android.os.ParcelFileDescriptor.MODE_READ_ONLY));
+             final int pageCount=renderer.getPageCount(); renderer.close();
+             android.print.PrintDocumentAdapter adapter=new android.print.PrintDocumentAdapter(){
+              @Override public void onLayout(android.print.PrintAttributes oldA,android.print.PrintAttributes newA,android.os.CancellationSignal cancel,LayoutResultCallback cb,android.os.Bundle extras){
+               if(cancel.isCanceled()){cb.onLayoutCancelled();return;}
+               android.print.PrintDocumentInfo info=new android.print.PrintDocumentInfo.Builder(title+".pdf").setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT).setPageCount(pageCount).build();
+               cb.onLayoutFinished(info,true);
+              }
+              @Override public void onWrite(android.print.PageRange[] ranges,java.io.FileDescriptor destination,android.os.CancellationSignal cancel,WriteResultCallback cb){
+               try(java.io.InputStream in=new java.io.FileInputStream(pdfFile);java.io.OutputStream out=new java.io.FileOutputStream(destination)){
+                byte[] buffer=new byte[16384];int n;while((n=in.read(buffer))>0){if(cancel.isCanceled()){cb.onWriteCancelled();return;}out.write(buffer,0,n);}out.flush();cb.onWriteFinished(new android.print.PageRange[]{android.print.PageRange.ALL_PAGES});
+               }catch(Exception e){cb.onWriteFailed(e.getMessage());}
+              }
+             };
+             pm.print(title,adapter,new android.print.PrintAttributes.Builder().setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4).setResolution(new android.print.PrintAttributes.Resolution("default","Default",300,300)).setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS).build());
+             com.getcapacitor.JSObject result=new com.getcapacitor.JSObject();result.put("started",true);call.resolve(result);
+            } catch(Exception e){call.reject("Unable to print PDF",e);}
+           });
+          }
+          @PluginMethod public void print(PluginCall call) {
             final String html=call.getString("html","");
             final String title=call.getString("title","Daily Interest Statement");
             final String paper=call.getString("paperSize","A4");
