@@ -38,6 +38,8 @@ jobs:
 
       - name: Bundle Firebase Authentication bridge
         run: npx esbuild src/firebase-auth.js --bundle --format=iife --global-name=FirebaseAuthBundle --outfile=www/firebase-auth.bundle.js
+      - name: Bundle Firebase Cloud Sync bridge
+        run: npx esbuild src/firebase-cloud.js --bundle --format=iife --global-name=FirebaseCloudBundle --outfile=www/firebase-cloud.bundle.js
 
       - name: Add Android platform
         run: npx cap add android
