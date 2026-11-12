@@ -233,7 +233,7 @@ jobs:
         run: |
           command -v convert
           # Use the approved D + rupee book logo for splash, in-app branding and Android launcher icons.
-          convert -background none www/assets/daily-khata-logo.svg -resize 1024x1024 -gravity center -background '#6D35B5' -extent 1024x1024 www/assets/app-icon.png
+          convert -background none www/assets/daily-khata-logo.svg -resize 1024x1024 -gravity center -extent 1024x1024 www/assets/app-icon.png
 
       - name: Prepare padded launcher icon from the approved artwork
         run: |
