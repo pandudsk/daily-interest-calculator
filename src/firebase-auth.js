@@ -2,6 +2,7 @@ import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 window.FirebaseAuth = {
   getCurrentUser: async () => (await FirebaseAuthentication.getCurrentUser()).user || null,
+  getIdToken: async () => { const result = await FirebaseAuthentication.getIdToken(); return result.token || result.idToken || result; },
   signInEmail: async (email, password) => (await FirebaseAuthentication.signInWithEmailAndPassword({ email, password })).user,
   registerEmail: async (email, password) => (await FirebaseAuthentication.createUserWithEmailAndPassword({ email, password })).user,
   signInGoogle: async () => (await FirebaseAuthentication.signInWithGoogle()).user,
