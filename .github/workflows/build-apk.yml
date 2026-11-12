@@ -39,8 +39,16 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Add Firebase Android configuration
+        run: cp google-services.json android/app/google-services.json
+
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Configure Google Services Gradle plugin
+        run: |
+          sed -i "/classpath.*com.android.tools.build:gradle/a\\        classpath 'com.google.gms:google-services:4.4.4'" android/build.gradle
+          printf "\\napply plugin: 'com.google.gms.google-services'\\n" >> android/app/build.gradle
 
       - name: Register native Android PrintManager plugin
         run: |
