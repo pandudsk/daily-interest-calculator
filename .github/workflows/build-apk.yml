@@ -36,6 +36,9 @@ jobs:
       - name: Bundle native print bridge
         run: npx esbuild src/native-print.js --bundle --format=iife --global-name=NativePrintBundle --outfile=www/native-print.bundle.js
 
+      - name: Bundle Firebase Authentication bridge
+        run: npx esbuild src/firebase-auth.js --bundle --format=iife --global-name=FirebaseAuthBundle --outfile=www/firebase-auth.bundle.js
+
       - name: Add Android platform
         run: npx cap add android
 
@@ -44,6 +47,12 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Enable Google Sign-In Android dependencies
+        run: |
+          if [ -f android/variables.gradle ]; then
+            sed -i "/ext {/a\\    rgcfaIncludeGoogle = true\\n    androidxCredentialsVersion = '1.3.0'" android/variables.gradle
+          fi
 
       - name: Configure Google Services Gradle plugin
         run: |
