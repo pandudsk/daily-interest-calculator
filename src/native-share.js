@@ -119,8 +119,25 @@ async function sharePrepared(prepared) {
 }
 async function downloadPrepared(prepared) {
   if(!prepared) throw new Error('Generate the statement first');
-  if(prepared.blob){const a=document.createElement('a');a.href=prepared.url;a.download=prepared.filename;a.click();return true;}
-  return Filesystem.writeFile({path:`Download/${prepared.filename}`,data:prepared.base64,directory:Directory.Documents,recursive:true});
+  if(prepared.blob){
+    const a=document.createElement('a');
+    a.href=prepared.url;
+    a.download=prepared.filename;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return true;
+  }
+  // Save directly in the app's Documents directory. Avoid the nested
+  // "Download/" path, which can fail on Android scoped-storage builds.
+  const saved=await Filesystem.writeFile({
+    path:prepared.filename,
+    data:prepared.base64,
+    directory:Directory.Documents,
+    recursive:true
+  });
+  return {...saved,filename:prepared.filename};
 }
 async function shareStatement(data){const prepared=await generateStatement(data);await sharePrepared(prepared);return true;}
 window.NativeShare = { generateStatement, sharePrepared, downloadPrepared, shareStatement };
