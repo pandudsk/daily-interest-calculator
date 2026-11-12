@@ -31,7 +31,7 @@ async function token() {
   return { uid: user.uid, value };
 }
 async function request(uid, idToken, method, body) {
-  const url = DOC_URL + encodeURIComponent(uid) + '/khataBook';
+  const url = DOC_URL + encodeURIComponent(uid) + '/khataBook/main';
   const response = await fetch(url, {
     method,
     headers: { Authorization: 'Bearer ' + idToken, 'Content-Type': 'application/json' },
