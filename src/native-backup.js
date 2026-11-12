@@ -13,9 +13,9 @@ async function saveSafetyCopy(json, filename = AUTO_BACKUP) {
  await Filesystem.writeFile({path:filename,data:json,directory:Directory.Data,encoding:'utf8',recursive:true});
  return true;
 }
-async function readSafetyCopy() {
+async function readSafetyCopy(filename = AUTO_BACKUP) {
  if (!Capacitor.isNativePlatform()) return null;
- try { const result=await Filesystem.readFile({path:AUTO_BACKUP,directory:Directory.Data,encoding:'utf8'}); return typeof result.data==='string'?result.data:null; }
+ try { const result=await Filesystem.readFile({path:filename,directory:Directory.Data,encoding:'utf8'}); return typeof result.data==='string'?result.data:null; }
  catch (_) { return null; }
 }
 window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy};
