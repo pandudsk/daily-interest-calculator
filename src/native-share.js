@@ -41,7 +41,7 @@ function renderStatementPages(data) {
   const sections=[
     {title:'APPULU / CREDIT LEDGER',rows:(data.appulu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
     {title:'JAMALU / DEBIT LEDGER',rows:(data.jamalu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
-    {title:'TRANSACTION HISTORY',rows:(data.transactions||[]).map(t=>[date(t.date),t.type==='credit'?'APPULU / CREDIT':'JAMALU / DEBIT',money(t.amount)])}
+    {title:'TRANSACTION HISTORY',rows:(data.transactions||[]).map(t=>[date(t.date),(t.type==='credit'?'APPULU / CREDIT':'JAMALU / DEBIT')+(t.description?' — '+t.description:''),money(t.amount)])}
   ];
   let pageNo=0,ctx,canvas,y;
   function newPage(){
