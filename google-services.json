@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "310809001496",
+    "project_id": "daily-interest-calculato-b68a7",
+    "storage_bucket": "daily-interest-calculato-b68a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310809001496:android:93ab42105a65166857cd6d",
+        "android_client_info": {
+          "package_name": "com.dintakurthi.dailyinterest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "310809001496-ofb1t1ri53an72f1e2vna1kgigomrgo7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNHIBB-kkAcCZYEpVXz6L3S3IDggZf0F8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "310809001496-ofb1t1ri53an72f1e2vna1kgigomrgo7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
