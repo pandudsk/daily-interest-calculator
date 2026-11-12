@@ -229,10 +229,15 @@ jobs:
           sudo apt-get install -y imagemagick
           command -v convert
 
-      - name: Prepare padded launcher icon from the existing artwork
+      - name: Generate Daily Khata Book logo artwork
         run: |
           command -v convert
-          # Keep the original artwork; only scale it down and add safe purple margins.
+          # Use the approved D + rupee book logo for splash, in-app branding and Android launcher icons.
+          convert -background none www/assets/daily-khata-logo.svg -resize 1024x1024 -gravity center -background '#6D35B5' -extent 1024x1024 www/assets/app-icon.png
+
+      - name: Prepare padded launcher icon from the approved artwork
+        run: |
+          command -v convert
           cp www/assets/app-icon.png /tmp/app-icon-original.png
           convert /tmp/app-icon-original.png -resize 790x790 -background "#6D35B5" -gravity center -extent 1024x1024 www/assets/app-icon-padded.png
           
