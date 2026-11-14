@@ -3,7 +3,7 @@ name: Build Daily Interest Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, release/v1.3-audit-share-print, v1.20-development ]
+    branches: [ main, release/v1.3-audit-share-print, v1.20-development, ui/design-6-navigation ]
 
 jobs:
   build:
@@ -267,8 +267,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 21', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.20"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 22', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.21"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -279,7 +279,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.20", code: 21 };
+          window.APP_VERSION = { name: "1.21", code: 22 };
           EOF
           npx cap copy android
 
