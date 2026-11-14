@@ -209,29 +209,69 @@ jobs:
       - name: Install Pillow for launcher icon processing
         run: python -m pip install pillow
 
-      - name: Prepare padded launcher icon from the splash artwork
+      - name: Generate clean app icon and splash artwork
         run: |
+          python - <<'PY'
+          from PIL import Image, ImageDraw, ImageFont
+          from pathlib import Path
+          import math
+          assets = Path("www/assets")
+          assets.mkdir(parents=True, exist_ok=True)
+          purple = (109, 53, 181)
+          gold = (255, 205, 75)
+          def font(size):
+              for p in ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"]:
+                  if Path(p).exists(): return ImageFont.truetype(p, size)
+              return ImageFont.load_default()
+          icon = Image.new("RGBA", (512, 512), (0,0,0,0))
+          d = ImageDraw.Draw(icon)
+          d.rounded_rectangle((18,18,494,494), radius=112, fill=purple)
+          d.ellipse((102,86,410,394), fill=(255,222,132), outline=(255,241,194), width=14)
+          d.ellipse((124,108,388,372), fill=(190,127,24), outline=(255,231,155), width=8)
+          d.ellipse((139,123,373,357), fill=gold)
+          d.text((169,125), "D", font=font(210), fill=(91,43,140), stroke_width=2, stroke_fill=(255,239,185))
+          d.ellipse((327,300,444,417), fill=(255,246,218), outline=gold, width=9)
+          d.text((344,306), "₹", font=font(78), fill=(109,53,181))
+          icon.save(assets / "app-icon.png", optimize=True)
+          # Full-screen splash art using the same icon mark.
+          w,h = 720,1600
+          splash = Image.new("RGB",(w,h))
+          px=splash.load()
+          top=(83,35,145); bottom=(137,91,198)
+          for y in range(h):
+              t=y/(h-1)
+              c=tuple(int(top[i]*(1-t)+bottom[i]*t) for i in range(3))
+              for x in range(w): px[x,y]=c
+          mark=icon.resize((390,390),Image.Resampling.LANCZOS)
+          splash.paste(mark,((w-390)//2,420),mark)
+          sd=ImageDraw.Draw(splash)
+          def centered(y,text,ft,fill):
+              box=sd.textbbox((0,0),text,font=ft)
+              sd.text(((w-(box[2]-box[0]))//2,y),text,font=ft,fill=fill)
+          centered(875,"DAILY KHATA BOOK",font(48),"white")
+          centered(955,"By Dintakurthi's Finsol",font(30),(245,235,255))
+          centered(1030,"Appulu  •  Jamalu  •  Daily Interest Ledger",font(21),(245,235,255))
+          centered(1450,"Made in India",font(24),"white")
+          splash.save(assets / "splash-screen.jpg",quality=92,optimize=True)
+          PY
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
           source = Image.open("www/assets/app-icon.png").convert("RGBA")
-          # Use the dedicated transparent app mark; keep the full splash artwork separate.
-          artwork = source.copy()
-          artwork.thumbnail((790, 790), Image.Resampling.LANCZOS)
-          canvas = Image.new("RGBA", (1024, 1024), "#6D35B5")
-          canvas.alpha_composite(artwork, ((1024-artwork.width)//2, (1024-artwork.height)//2))
-          canvas.convert("RGB").save("www/assets/app-icon-padded.png", format="PNG", optimize=True)
-          root = Path("android/app/src/main/res")
-          for folder in ["drawable", "mipmap-mdpi", "mipmap-hdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi", "mipmap-anydpi-v26", "values"]:
-              (root / folder).mkdir(parents=True, exist_ok=True)
-          for density, pixels in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
-              icon = canvas.resize((pixels,pixels), Image.Resampling.LANCZOS)
-              icon.save(root / f"mipmap-{density}/ic_launcher.png", format="PNG", optimize=True)
-              icon.save(root / f"mipmap-{density}/ic_launcher_round.png", format="PNG", optimize=True)
-          canvas.resize((432,432), Image.Resampling.LANCZOS).save(root / "drawable/ic_launcher_full.png", format="PNG", optimize=True)
+          source.thumbnail((790,790), Image.Resampling.LANCZOS)
+          canvas = Image.new("RGBA",(1024,1024),"#6D35B5")
+          canvas.alpha_composite(source,((1024-source.width)//2,(1024-source.height)//2))
+          canvas.convert("RGB").save("www/assets/app-icon-padded.png",format="PNG",optimize=True)
+          root=Path("android/app/src/main/res")
+          for folder in ["drawable","mipmap-mdpi","mipmap-hdpi","mipmap-xhdpi","mipmap-xxhdpi","mipmap-xxxhdpi","mipmap-anydpi-v26","values"]:
+              (root/folder).mkdir(parents=True,exist_ok=True)
+          for density,pixels in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
+              icon=canvas.resize((pixels,pixels),Image.Resampling.LANCZOS)
+              icon.save(root/f"mipmap-{density}/ic_launcher.png",format="PNG",optimize=True)
+              icon.save(root/f"mipmap-{density}/ic_launcher_round.png",format="PNG",optimize=True)
+          canvas.resize((432,432),Image.Resampling.LANCZOS).save(root/"drawable/ic_launcher_full.png",format="PNG",optimize=True)
           PY
           npx cap copy android
-
       - name: Set purple Android launch background
         run: |
           mkdir -p android/app/src/main/res/drawable android/app/src/main/res/values
