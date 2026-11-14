@@ -214,13 +214,13 @@ jobs:
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
-          source = Image.open("www/assets/splash-screen.jpg").convert("RGB")
-          # Isolate the purple book + gold D + rupee coin from the top of the supplied splash.
-          artwork = source.crop((65, 0, 335, 330))
+          source = Image.open("www/assets/app-icon.png").convert("RGBA")
+          # Use the dedicated transparent app mark; keep the full splash artwork separate.
+          artwork = source.copy()
           artwork.thumbnail((790, 790), Image.Resampling.LANCZOS)
-          canvas = Image.new("RGB", (1024, 1024), "#6D35B5")
-          canvas.paste(artwork, ((1024-artwork.width)//2, (1024-artwork.height)//2))
-          canvas.save("www/assets/app-icon-padded.png", format="PNG", optimize=True)
+          canvas = Image.new("RGBA", (1024, 1024), "#6D35B5")
+          canvas.alpha_composite(artwork, ((1024-artwork.width)//2, (1024-artwork.height)//2))
+          canvas.convert("RGB").save("www/assets/app-icon-padded.png", format="PNG", optimize=True)
           root = Path("android/app/src/main/res")
           for folder in ["drawable", "mipmap-mdpi", "mipmap-hdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi", "mipmap-anydpi-v26", "values"]:
               (root / folder).mkdir(parents=True, exist_ok=True)
@@ -269,8 +269,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 26', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.25"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 27', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.26"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -281,7 +281,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.25", code: 26 };
+          window.APP_VERSION = { name: "1.26", code: 27 };
           EOF
           npx cap copy android
 
