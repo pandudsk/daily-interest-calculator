@@ -399,6 +399,18 @@ jobs:
           path.write_text(text)
           PY
 
+      - name: Print Google Sign-In SHA-1 fingerprints
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "=== DEBUG KEY SHA-1 ==="
+          cd android
+          ./gradlew signingReport | grep -E 'Variant:|SHA1:'
+          cd ..
+          echo "=== RELEASE KEY SHA-1 ==="
+          keytool -list -v -keystore android/app/keystore/dintakurthi-release.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" | grep -E 'SHA1:'
+
       - name: Build Signed Release APK
         working-directory: android
         env:
