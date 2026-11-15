@@ -8,6 +8,7 @@ export const getCurrentUser = async () => userOf(await FirebaseAuthentication.ge
 export const registerEmail = async (email,password) => userOf(await FirebaseAuthentication.createUserWithEmailAndPassword({email,password}));
 export const loginEmail = async (email,password) => userOf(await FirebaseAuthentication.signInWithEmailAndPassword({email,password}));
 export const sendEmailVerification = async () => FirebaseAuthentication.sendEmailVerification();
+export const sendPasswordResetEmail = async email => FirebaseAuthentication.sendPasswordResetEmail({email});
 export const reloadCurrentUser = async () => { await FirebaseAuthentication.reload(); return userOf(await FirebaseAuthentication.getCurrentUser()); };
 export async function sendPhoneOtp(phoneNumber,onSent,onAuto,onError){
   await clean(); verificationId=null;
@@ -32,10 +33,11 @@ export function errorText(e){
  'auth/wrong-password':'Password తప్పు.',
  'auth/invalid-credential':'Email లేదా Password తప్పుగా ఉంది.',
  'auth/too-many-requests':'చాలా ప్రయత్నాలు చేశారు. కొద్దిసేపటి తర్వాత ప్రయత్నించండి.',
+ 'auth/missing-email':'Registered Email address ఇవ్వండి.',
  'auth/invalid-phone-number':'సరైన Mobile Number ఇవ్వండి.',
  'auth/quota-exceeded':'OTP పరిమితి పూర్తయింది.',
  'auth/operation-not-allowed':'ఈ Login విధానం Firebase‌లో Enable చేయాలి.',
  'OTP_VERIFICATION_NOT_STARTED':'ముందుగా OTP పంపించండి.'
  }; return m[c]||e?.message||'Login విఫలమైంది. మళ్లీ ప్రయత్నించండి.';
 }
-window.DailyKhataAuth={getCurrentUser,registerEmail,loginEmail,sendEmailVerification,reloadCurrentUser,sendPhoneOtp,verifyPhoneOtp,googleLogin,signOut,errorText};
+window.DailyKhataAuth={getCurrentUser,registerEmail,loginEmail,sendEmailVerification,sendPasswordResetEmail,reloadCurrentUser,sendPhoneOtp,verifyPhoneOtp,googleLogin,signOut,errorText};
