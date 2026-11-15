@@ -243,7 +243,7 @@ jobs:
           import shutil
           assets = Path("www/assets")
           icon_source = assets / "app-icon-original.png"
-          splash_source = assets / "splash-screen-original.png"
+          splash_source = assets / "splash-screen-1.png"
           if not icon_source.is_file() or not splash_source.is_file():
               raise SystemExit("Original branding images are missing from www/assets")
           icon = Image.open(icon_source).convert("RGBA")
