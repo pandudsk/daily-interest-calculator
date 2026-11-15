@@ -262,7 +262,7 @@ function renderReportDetail(){
   const period=document.createElement('p');period.className='muted';period.textContent='Statement Period: '+fmtDate(preparedStatement.periodStart)+' – '+fmtDate(preparedStatement.periodEnd);area.append(period);
   const bar=document.createElement('div');bar.className='pdf-preview-actions';
   bar.append(button('Share PDF','',async()=>{try{await window.NativeShare.sharePrepared(preparedStatement)}catch(e){if(e?.name!=='AbortError')toast('Unable to share PDF')}}));
-  bar.append(button('Download PDF','secondary',async()=>{try{await window.NativeShare.downloadPrepared(preparedStatement);toast('PDF saved to Documents/Download')}catch(e){toast(e.message||'Download unavailable')}}));
+  bar.append(button('Download PDF','secondary',async()=>{try{await window.NativeShare.downloadPrepared(preparedStatement);toast('PDF saved to Documents folder')}catch(e){toast(e.message||'Download unavailable')}}));
   bar.append(button('Print PDF','secondary',async()=>{try{if(!window.NativePrint?.printPdf)throw new Error('PDF printing is unavailable');await window.NativePrint.printPdf({title:preparedStatement.title,base64:preparedStatement.base64})}catch(e){console.error('PDF print failed',e);toast('Unable to open PDF print dialog')}}));
   bar.append(button('Change Period','secondary',showPeriodChooser));area.append(bar);
   preparedStatement.pages.forEach((page,i)=>{const img=document.createElement('img');img.className='pdf-preview-page';img.alt='Statement PDF page '+(i+1);img.src='data:image/jpeg;base64,'+page;area.append(img)});
