@@ -166,12 +166,12 @@ function renderShopOverview(){
   if(customer.transactions.length)active++;
   const a=ledger(customer,'credit',end),j=ledger(customer,'debit',end);
   appPrincipal+=a.principal;jamPrincipal+=j.principal;appInterest+=a.interest;jamInterest+=j.interest;appTotal+=a.total;jamTotal+=j.total;
-  customer.transactions.forEach(tx=>all.push({...tx,customerName:customer.name}));
+  customer.transactions.forEach((tx,index)=>all.push({...tx,customerName:customer.name,_recentOrder:index}));
  });
  const values={shopCustomerCount:state.customers.length,shopActiveCustomers:active,shopAppuluPrincipal:money(appPrincipal),shopJamaluPrincipal:money(jamPrincipal),shopAppuluInterest:money(appInterest),shopJamaluInterest:money(jamInterest),shopOutstanding:money(appTotal-jamTotal),shopTxCount:all.length+' entries'};
  Object.entries(values).forEach(([id,value])=>{const el=$(id);if(el)el.textContent=value});
  const list=$('shopRecentTransactions');if(!list)return;list.innerHTML='';
- all.sort((a,b)=>b.date.localeCompare(a.date));
+ all.sort((a,b)=>b.date.localeCompare(a.date)||(b._recentOrder-a._recentOrder));
  all.slice(0,8).forEach(tx=>{const item=document.createElement('div');item.className='transaction-card '+(tx.type==='credit'?'credit':'debit');const symbol=document.createElement('div');symbol.className='tx-symbol';symbol.textContent=tx.type==='credit'?'＋':'－';const main=document.createElement('div');main.className='tx-main';const title=document.createElement('div');title.className='tx-title';title.textContent=tx.customerName+' · '+(tx.type==='credit'?'Appulu':'Jamalu');const meta=document.createElement('div');meta.className='tx-meta';meta.textContent=fmtDate(tx.date)+' · '+(tx.description||'No description');main.append(title,meta);const amount=document.createElement('div');amount.className='tx-amount';amount.textContent=money(tx.amount);item.append(symbol,main,amount);list.append(item)});
  if(!all.length)list.innerHTML='<div class="muted" style="text-align:center;padding:18px">No transactions yet</div>';
 }
