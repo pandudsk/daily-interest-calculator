@@ -44,6 +44,27 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Configure Firebase Android SDK
+        run: |
+          cp google-services.json android/app/google-services.json
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("android/build.gradle")
+          text = root.read_text()
+          classpath = "classpath 'com.google.gms:google-services:4.4.2'"
+          if classpath not in text:
+              if "dependencies {" in text:
+                  text = text.replace("dependencies {", "dependencies {\\n        " + classpath, 1)
+              else:
+                  text = "buildscript {\\n    dependencies {\\n        " + classpath + "\\n    }\\n}\\n\\n" + text
+              root.write_text(text)
+          app = Path("android/app/build.gradle")
+          app_text = app.read_text()
+          if "com.google.gms.google-services" not in app_text:
+              app_text += "\\napply plugin: 'com.google.gms.google-services'\\n"
+              app.write_text(app_text)
+          PY
+
       - name: Register native Android PrintManager plugin
         run: |
           mkdir -p android/app/src/main/java/com/dintakurthi/dailyinterest
