@@ -3,7 +3,7 @@ name: Build Daily Interest Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, release/v1.3-audit-share-print, v1.20-development, ui/design-6-navigation ]
+    branches: [ main, release/v1.3-audit-share-print, v1.20-development, ui/design-6-navigation, feature/logo-cloud-backup ]
 
 jobs:
   build:
@@ -269,6 +269,28 @@ jobs:
               resized.save(folder / "ic_launcher_round.png", format="PNG", optimize=True)
           (root / "drawable").mkdir(parents=True, exist_ok=True)
           canvas.resize((432,432), Image.Resampling.LANCZOS).save(root / "drawable/ic_launcher_full.png", format="PNG", optimize=True)
+          # Android 8+ adaptive icon artwork, centered inside the launcher safe zone.
+          foreground = Image.new("RGBA", (1024,1024), (0,0,0,0))
+          mark = icon.copy()
+          mark.thumbnail((660,660), Image.Resampling.LANCZOS)
+          foreground.alpha_composite(mark, ((1024-mark.width)//2, (1024-mark.height)//2))
+          nodpi = root / "drawable-nodpi"
+          nodpi.mkdir(parents=True, exist_ok=True)
+          foreground.save(nodpi / "ic_launcher_foreground.png", format="PNG", optimize=True)
+          adaptive = root / "mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+          xml = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background" /><foreground android:drawable="@drawable/ic_launcher_foreground" /></adaptive-icon>'
+          (adaptive / "ic_launcher.xml").write_text(xml)
+          (adaptive / "ic_launcher_round.xml").write_text(xml)
+          values = root / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          colors = values / "colors.xml"
+          if colors.exists():
+              current = colors.read_text()
+              if "ic_launcher_background" not in current:
+                  colors.write_text(current.replace("</resources>", '  <color name="ic_launcher_background">#6D35B5</color>\n</resources>'))
+          else:
+              colors.write_text('<resources><color name="ic_launcher_background">#6D35B5</color></resources>')
           PY
           npx cap copy android
 
@@ -309,8 +331,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 32', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.31"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 33', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.32"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -321,7 +343,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.31", code: 32 };
+          window.APP_VERSION = { name: "1.32", code: 33 };
           EOF
           npx cap copy android
 
