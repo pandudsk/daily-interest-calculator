@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "310809001496-8me3v7e3651h1li7qhnmigh3v2vaehsa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dintakurthi.dailyinterest",
+            "certificate_hash": "95425b9173678d39d5aef3baee46431338e04d52"
+          }
+        },
+        {
+          "client_id": "310809001496-p8jubf1mkl68mv0ndcoobf0pbjqrddru.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dintakurthi.dailyinterest",
+            "certificate_hash": "0da6ce5a154a7e30fe200a0ffdbc7a0ae8747299"
+          }
+        },
+        {
           "client_id": "310809001496-ofb1t1ri53an72f1e2vna1kgigomrgo7.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -26,7 +42,7 @@
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
-             {
+            {
               "client_id": "310809001496-ofb1t1ri53an72f1e2vna1kgigomrgo7.apps.googleusercontent.com",
               "client_type": 3
             }
