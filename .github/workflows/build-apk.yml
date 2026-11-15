@@ -54,14 +54,14 @@ jobs:
           classpath = "classpath 'com.google.gms:google-services:4.4.2'"
           if classpath not in text:
               if "dependencies {" in text:
-                  text = text.replace("dependencies {", "dependencies {\\n        " + classpath, 1)
+                  text = text.replace("dependencies {", "dependencies {\n        " + classpath, 1)
               else:
-                  text = "buildscript {\\n    dependencies {\\n        " + classpath + "\\n    }\\n}\\n\\n" + text
+                  text = "buildscript {\n    dependencies {\n        " + classpath + "\n    }\n}\n\n" + text
               root.write_text(text)
           app = Path("android/app/build.gradle")
           app_text = app.read_text()
           if "com.google.gms.google-services" not in app_text:
-              app_text += "\\napply plugin: 'com.google.gms.google-services'\\n"
+              app_text += "\napply plugin: 'com.google.gms.google-services'\n"
               app.write_text(app_text)
           PY
 
