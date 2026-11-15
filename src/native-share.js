@@ -120,7 +120,8 @@ async function sharePrepared(prepared) {
 async function downloadPrepared(prepared) {
   if(!prepared) throw new Error('Generate the statement first');
   if(prepared.blob){const a=document.createElement('a');a.href=prepared.url;a.download=prepared.filename;a.click();return true;}
-  return Filesystem.writeFile({path:`Download/${prepared.filename}`,data:prepared.base64,directory:Directory.Documents,recursive:true});
+  const saved=await Filesystem.writeFile({path:prepared.filename,data:prepared.base64,directory:Directory.Documents,recursive:true});
+  return {...saved,filename:prepared.filename};
 }
 async function shareStatement(data){const prepared=await generateStatement(data);await sharePrepared(prepared);return true;}
 window.NativeShare = { generateStatement, sharePrepared, downloadPrepared, shareStatement };
