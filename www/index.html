@@ -33,35 +33,30 @@
 
 <div id="authGate" class="auth-gate">
  <section class="auth-card" id="registrationPage" aria-label="Registration page">
-  <div class="auth-brand-mark">📒</div>
   <h1 class="auth-title">Create your account</h1>
-  <p class="auth-subtitle">Register to start using Daily Khata Book.</p>
+  <p class="auth-subtitle">Enter your mobile number or email to register. We’ll verify your email with a secure link.</p>
+  <label class="auth-label" for="registerMobile">MOBILE NUMBER (OPTIONAL)</label>
+  <div class="auth-input-wrap"><span class="auth-prefix">+91 ☎</span><input id="registerMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="Enter your mobile number" autocomplete="tel-national"></div>
+  <div class="auth-or">OR</div>
   <label class="auth-label" for="registerEmail">EMAIL ADDRESS</label>
   <div class="auth-input-wrap"><span class="auth-prefix">✉</span><input id="registerEmail" type="email" placeholder="Enter your email" autocomplete="email"></div>
   <label class="auth-label" for="registerPassword">CREATE PASSWORD</label>
   <div class="auth-input-wrap"><input id="registerPassword" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="new-password"></div>
-  <button class="auth-btn primary" id="authRegister" type="button" style="width:100%">Create Account</button>
-  <button class="auth-google" id="authRegisterGoogle" type="button" style="margin-top:14px"><span class="auth-google-mark">G</span>Sign up with Google</button>
+  <div class="auth-actions"><button class="auth-btn primary" id="authRegister" type="button">Register</button><button class="auth-btn" id="showLoginPage" type="button">Login</button></div>
+  <button class="auth-google" id="authRegisterGoogle" type="button"><span class="auth-google-mark">G</span>Continue with Google</button>
   <p class="auth-terms">By continuing, you agree to our <a href="#" id="authTerms">Terms</a> &amp; <a href="#" id="authPrivacy">Privacy Policy</a></p>
-  <p style="text-align:center;margin:18px 0 0;font-size:14px;color:#5d4a70">Already have an account? <button type="button" id="showLoginPage" style="padding:4px 6px;background:transparent;color:#6d35b5;text-decoration:underline">Login</button></p>
   <p class="auth-status" id="registerStatus" role="status" aria-live="polite"></p>
  </section>
  <section class="auth-card" id="loginPage" aria-label="Login page" hidden>
-  <div class="auth-brand-mark">📒</div>
   <h1 class="auth-title">Welcome back</h1>
-  <p class="auth-subtitle">Login to continue to your Daily Khata Book.</p>
-  <label class="auth-label" for="loginEmail">EMAIL ADDRESS</label>
-  <div class="auth-input-wrap"><span class="auth-prefix">✉</span><input id="loginEmail" type="email" placeholder="Enter your email" autocomplete="email"></div>
+  <p class="auth-subtitle">Login to your Daily Khata Book account.</p>
+  <label class="auth-label" for="loginIdentifier">PHONE NUMBER OR EMAIL</label>
+  <div class="auth-input-wrap"><input id="loginIdentifier" type="text" placeholder="Enter phone number or email" autocomplete="username"></div>
   <label class="auth-label" for="loginPassword">PASSWORD</label>
   <div class="auth-input-wrap"><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></div>
   <button class="auth-btn primary" id="authLogin" type="button" style="width:100%">Login</button>
-  <div class="auth-or">OR LOGIN WITH MOBILE OTP</div>
-  <label class="auth-label" for="loginMobile">MOBILE NUMBER</label>
-  <div class="auth-input-wrap"><span class="auth-prefix">+91</span><input id="loginMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel-national"></div>
-  <button class="auth-btn" id="authSendOtp" type="button" style="width:100%">Send Mobile OTP</button>
-  <div id="loginOtpArea" hidden><label class="auth-label" for="loginOtp">ENTER OTP</label><div class="auth-input-wrap"><input id="loginOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" autocomplete="one-time-code"></div><button class="auth-btn primary" id="authVerifyOtp" type="button" style="width:100%">Verify OTP</button></div>
   <button class="auth-google" id="authLoginGoogle" type="button" style="margin-top:14px"><span class="auth-google-mark">G</span>Continue with Google</button>
-  <p style="text-align:center;margin:18px 0 0;font-size:14px;color:#5d4a70">New to Daily Khata Book? <button type="button" id="showRegistrationPage" style="padding:4px 6px;background:transparent;color:#6d35b5;text-decoration:underline">Create Account</button></p>
+  <p style="text-align:center;margin:18px 0 0;font-size:14px;color:#5d4a70">New to Daily Khata Book? <button type="button" id="showRegistrationPage" style="padding:4px 6px;background:transparent;color:#6d35b5;text-decoration:underline">Register</button></p>
   <p class="auth-status" id="loginStatus" role="status" aria-live="polite"></p>
  </section>
 </div>
@@ -286,35 +281,34 @@ let busy=false;
 function showPage(page){$('registrationPage').hidden=page!=='register';$('loginPage').hidden=page!=='login';$('registerStatus').textContent='';$('loginStatus').textContent='';}
 $('showLoginPage').addEventListener('click',()=>showPage('login'));
 $('showRegistrationPage').addEventListener('click',()=>showPage('register'));
-function setBusy(value){busy=value;['authRegister','authLogin','authSendOtp','authVerifyOtp','authRegisterGoogle','authLoginGoogle'].forEach(id=>$(id).disabled=value);}
+function setBusy(value){busy=value;['authRegister','authLogin','authRegisterGoogle','authLoginGoogle'].forEach(id=>$(id).disabled=value);}
 function enterApp(user){if(!user)return;$('authGate').style.display='none';localStorage.setItem('dailykhata_auth_uid',user.uid||'');}
 async function run(statusId,fn){if(busy)return;setBusy(true);try{const user=await fn();if(user)enterApp(user);}catch(e){console.error('Firebase Authentication:',e);$(statusId).textContent=auth().errorText(e);}finally{setBusy(false);}}
 $('authRegister').addEventListener('click',()=>run('registerStatus',async()=>{
- const email=$('registerEmail').value.trim(),password=$('registerPassword').value;
- if(!email||!password)throw new Error('Email మరియు Password ఇవ్వండి.');
- if(password.length<6)throw new Error('Password కనీసం 6 అక్షరాలు ఉండాలి.');
- return await auth().registerEmail(email,password);
+ const email=$('registerEmail').value.trim(),password=$('registerPassword').value,mobile=$('registerMobile').value.replace(/\D/g,'');
+ if(!email)throw new Error('Email address తప్పనిసరిగా ఇవ్వాలి. Free Firebase verification link Email‌కు పంపబడుతుంది.');
+ if(mobile&&mobile.length!==10)throw new Error('సరైన 10-digit mobile number ఇవ్వండి.');
+ if(!password||password.length<6)throw new Error('Password కనీసం 6 అక్షరాలు ఉండాలి.');
+ await auth().registerEmail(email,password);
+ try{await auth().sendEmailVerification();}catch(e){await auth().signOut();throw e;}
+ await auth().signOut();
+ $('registerStatus').textContent='Verification link మీ Email‌కు పంపించాం. Email తెరిచి Verify చేసి, తర్వాత Login చేయండి.';
+ return null;
 }));
 $('authLogin').addEventListener('click',()=>run('loginStatus',async()=>{
- const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
- if(!email||!password)throw new Error('Email మరియు Password ఇవ్వండి.');
- return await auth().loginEmail(email,password);
-}));
-$('authSendOtp').addEventListener('click',()=>run('loginStatus',async()=>{
- const mobile=$('loginMobile').value.replace(/\D/g,'');
- if(!/^\d{10}$/.test(mobile))throw new Error('సరైన 10-digit Mobile Number ఇవ్వండి.');
- await auth().sendPhoneOtp('+91'+mobile,()=>{$('loginOtpArea').hidden=false;$('loginStatus').textContent='OTP పంపించాం. SMS లో వచ్చిన 6-digit code నమోదు చేయండి.';},user=>{if(user)enterApp(user);},e=>$('loginStatus').textContent=auth().errorText(e));
- $('loginOtpArea').hidden=false;$('loginStatus').textContent='OTP పంపించాం. SMS కోసం వేచి ఉండండి.';
-}));
-$('authVerifyOtp').addEventListener('click',()=>run('loginStatus',async()=>{
- const code=$('loginOtp').value.trim();if(!/^\d{6}$/.test(code))throw new Error('6-digit OTP నమోదు చేయండి.');
- return await auth().verifyPhoneOtp(code);
+ const identifier=$('loginIdentifier').value.trim(),password=$('loginPassword').value;
+ if(!identifier||!password)throw new Error('Phone number లేదా Email మరియు Password ఇవ్వండి.');
+ if(!identifier.includes('@'))throw new Error('Firebase Free plan‌లో Phone + Password login అందుబాటులో లేదు. Email + Password ఉపయోగించండి. Phone login కోసం backend అవసరం.');
+ const user=await auth().loginEmail(identifier,password);
+ const fresh=await auth().getCurrentUser();
+ if(!fresh?.emailVerified){await auth().sendEmailVerification();await auth().signOut();throw new Error('మీ Email ఇంకా verify కాలేదు. మళ్లీ verification link పంపించాం. Email verify చేసి Login చేయండి.');}
+ return user;
 }));
 $('authRegisterGoogle').addEventListener('click',()=>run('registerStatus',()=>auth().googleLogin()));
 $('authLoginGoogle').addEventListener('click',()=>run('loginStatus',()=>auth().googleLogin()));
-$('authTerms').addEventListener('click',e=>{e.preventDefault();$('registerStatus').textContent='Terms page release ముందు జోడిస్తాం.';});
-$('authPrivacy').addEventListener('click',e=>{e.preventDefault();$('registerStatus').textContent='Privacy Policy release ముందు జోడిస్తాం.';});
+$('authTerms').addEventListener('click',e=>{e.preventDefault();$('registerStatus').textContent='Terms page త్వరలో జోడిస్తాం.';});
+$('authPrivacy').addEventListener('click',e=>{e.preventDefault();$('registerStatus').textContent='Privacy Policy త్వరలో జోడిస్తాం.';});
 showPage('register');
-(async()=>{try{const user=await auth().getCurrentUser();if(user)enterApp(user);}catch(e){console.info('No existing Firebase session yet',e);}})();
+(async()=>{try{const user=await auth().getCurrentUser();if(user){const fresh=await auth().getCurrentUser();if(fresh?.emailVerified||fresh?.providerId==='google.com')enterApp(user);else await auth().signOut();}}catch(e){console.info('No existing Firebase session yet',e);}})();
 </script>
 </body></html>
