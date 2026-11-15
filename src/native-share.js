@@ -52,7 +52,7 @@ function renderStatementPages(data) {
     if(pageNo===1){
       ctx.fillStyle='#241b2d';ctx.font='bold 34px Arial, sans-serif';ctx.fillText('DAILY INTEREST STATEMENT',M,82);
       ctx.fillStyle='#766b84';ctx.font='25px Arial, sans-serif';ctx.fillText(String(data.customerName||''),M,125);
-      ctx.fillStyle='#766b84';ctx.font='21px Arial, sans-serif';ctx.fillText('Statement date: '+date(data.asOf)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
+      ctx.fillStyle='#766b84';ctx.font='21px Arial, sans-serif';ctx.fillText('Period: '+date(data.periodStart)+' to '+date(data.periodEnd)+'   |   Interest: ₹'+data.rate+' per ₹100 / month',M,164);
       ctx.strokeStyle='#d9c9ed';ctx.beginPath();ctx.moveTo(M,190);ctx.lineTo(W-M,190);ctx.stroke();
       y=224;
     } else { y=82; }
@@ -69,9 +69,9 @@ function renderStatementPages(data) {
   }
   newPage();
   heading('ACCOUNT SUMMARY');
-  table(['Description','Appulu / Credit','Jamalu / Debit'],[['Principal',money(data.appulu?.principal),money(data.jamalu?.principal)],['Interest',money(data.appulu?.interest),money(data.jamalu?.interest)],['Total with interest',money(data.appulu?.total),money(data.jamalu?.total)]],[0.42,0.29,0.29]);
+  table(['Statement Summary','Amount'],[['Opening Balance',money(data.openingBalance)],['Appulu / Credit during period',money(data.appulu?.periodAdded)],['Jamalu / Debit during period',money(data.jamalu?.periodAdded)],['Appulu Interest during period',money(data.appulu?.interest)],['Jamalu Interest during period',money(data.jamalu?.interest)],['Closing Balance',money(data.closingBalance)]],[0.68,0.32]);
   heading('FINAL SETTLEMENT');
-  table(['Particulars','Amount'],[['Appulu total with interest',money(data.appulu?.total)],['Less: Jamalu total with interest',money(data.jamalu?.total)],['Net settlement',money((data.appulu?.total||0)-(data.jamalu?.total||0))]],[0.68,0.32]);
+  table(['Particulars','Amount'],[['Opening Balance',money(data.openingBalance)],['Net Appulu / Jamalu added',money((data.appulu?.periodAdded||0)-(data.jamalu?.periodAdded||0))],['Net interest for period',money((data.appulu?.interest||0)-(data.jamalu?.interest||0))],['Closing Balance',money(data.closingBalance)]],[0.68,0.32]);
   sections.forEach(sec=>{heading(sec.title);if(!sec.rows.length){ctx.fillStyle='#766b84';ctx.font='20px Arial';ctx.fillText('No entries',M,y);y+=48;return}
     if(sec.title==='TRANSACTION HISTORY')table(['Date','Transaction type','Amount'],sec.rows,[0.28,0.48,0.24]);
     else table(['Date','Days','Opening','Interest','Added','Closing','Details'],sec.rows,[0.15,0.08,0.15,0.14,0.13,0.15,0.20]);
