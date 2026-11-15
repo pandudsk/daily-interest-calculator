@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Bundle Firebase Authentication bridge
+        run: npx esbuild src/firebase-auth.js --bundle --format=esm --outfile=www/firebase-auth.bundle.js
+
       - name: Bundle native backup bridge
         run: npx esbuild src/native-backup.js --bundle --format=iife --global-name=NativeBackupBundle --outfile=www/native-backup.bundle.js
 
