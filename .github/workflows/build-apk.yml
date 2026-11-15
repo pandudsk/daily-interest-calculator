@@ -282,15 +282,6 @@ jobs:
           xml = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background" /><foreground android:drawable="@drawable/ic_launcher_foreground" /></adaptive-icon>'
           (adaptive / "ic_launcher.xml").write_text(xml)
           (adaptive / "ic_launcher_round.xml").write_text(xml)
-          values = root / "values"
-          values.mkdir(parents=True, exist_ok=True)
-          colors = values / "colors.xml"
-          if colors.exists():
-              current = colors.read_text()
-              if "ic_launcher_background" not in current:
-                  colors.write_text(current.replace("</resources>", '  <color name="ic_launcher_background">#6D35B5</color>\n</resources>'))
-          else:
-              colors.write_text('<resources><color name="ic_launcher_background">#6D35B5</color></resources>')
           PY
           npx cap copy android
 
