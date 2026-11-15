@@ -38,9 +38,13 @@
   <label class="auth-label" for="authMobile">ENTER YOUR MOBILE NUMBER</label>
   <div class="auth-input-wrap"><span class="auth-prefix">+91　☎</span><input id="authMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="Enter your mobile number" autocomplete="tel-national"></div>
   <div class="auth-or">OR</div>
-  <label class="auth-label" for="authEmail">ENTER YOUR MAIL ID</label>
+  <label class="auth-label" for="authEmail">EMAIL ADDRESS</label>
   <div class="auth-input-wrap"><span class="auth-prefix" style="border:0;font-size:22px">✉</span><input id="authEmail" type="email" placeholder="Enter your email" autocomplete="email"></div>
+  <label class="auth-label" for="authPassword">PASSWORD (EMAIL LOGIN)</label>
+  <div class="auth-input-wrap"><input id="authPassword" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="current-password"></div>
   <div class="auth-actions"><button class="auth-btn primary" id="authRegister" type="button">Register</button><button class="auth-btn" id="authLogin" type="button">Login</button></div>
+  <button class="auth-btn" id="authSendOtp" type="button" style="width:100%;margin-bottom:14px">Send Mobile OTP</button>
+  <div id="authOtpArea" hidden><label class="auth-label" for="authOtp">ENTER OTP</label><div class="auth-input-wrap"><input id="authOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" autocomplete="one-time-code"></div><button class="auth-btn primary" id="authVerifyOtp" type="button" style="width:100%;margin-bottom:14px">Verify OTP</button></div>
   <button class="auth-google" id="authGoogle" type="button"><span class="auth-google-mark">G</span>Continue with Google</button>
   <p class="auth-terms">By continuing, you agree to our <a href="#" id="authTerms">Terms</a> &amp; <a href="#" id="authPrivacy">Privacy Policy</a></p>
   <p class="auth-status" id="authStatus" role="status" aria-live="polite"></p>
@@ -259,24 +263,43 @@ async function startPrint(){const p=$('paperSize')?.value||'A4',c=current();if(!
 $('backupBtn').onclick=async()=>{const data={format:'dintakurthi-daily-interest',version:2,exportedAt:new Date().toISOString(),...state};const json=JSON.stringify(data,null,2),filename='dintakurthi-interest-backup-'+todayISO()+'.json';try{if(window.NativeBackup?.shareBackup&&await window.NativeBackup.shareBackup(json,filename)){toast('Choose an app to save or send your backup');return}}catch(err){console.error('Native backup share failed',err);toast('Backup sharing failed. Try again.');return}const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);toast(msg[lang].backup)};$('restoreBtn').onclick=()=>$('restoreFile').click();$('restoreFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const d=JSON.parse(await file.text());if(d.format!=='dintakurthi-daily-interest'||!Array.isArray(d.customers)||!d.settings||!Number.isFinite(Number(d.settings.rate))||Number(d.settings.rate)<0)throw Error('shape');const customers=d.customers.map(c=>{if(!c||typeof c.id!=='string'||typeof c.name!=='string'||!Array.isArray(c.transactions))throw Error('customer');return {...c,transactions:c.transactions.map(x=>{if(!x||typeof x.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0)throw Error('transaction');return {...x,amount:Number(x.amount),type:x.type==='debit'?'debit':'credit'}})}});if(!confirm('Restore this backup? A safety copy of current data will be created first.'))return;const safety={format:'dintakurthi-daily-interest',version:2,exportedAt:new Date().toISOString(),...state};try{await window.NativeBackup?.saveSafetyCopy?.(JSON.stringify(safety), 'before-restore-'+Date.now()+'.json')}catch(err){console.error('Safety copy failed',err);if(!confirm('Could not create the automatic safety copy. Continue restoring anyway?'))return}state={customers,settings:{...blank().settings,...d.settings},profile:{...blank().profile,...(d.profile||{})},selected:customers.some(c=>c.id===d.selected)?d.selected:(customers[0]?.id||null)};save();render();toast(msg[lang].restored)}catch(err){console.error('Restore failed',err);toast(msg[lang].badBackup)}finally{e.target.value=''}};
 $('deleteAllBtn').onclick=()=>{if(confirm(msg[lang].confirmAll)){state=blank();save();render();toast('All data deleted')}};async function initializeApp(){let restoredFromBackup=false;try{if(!storedStateValid&&window.NativeBackup?.readSafetyCopy){const raw=await window.NativeBackup.readSafetyCopy();if(raw){const d=JSON.parse(raw);if((d.format==='dintakurthi-daily-interest'||!d.format)&&Array.isArray(d.customers)&&d.settings){state={customers:d.customers,settings:{...blank().settings,...d.settings},profile:{...blank().profile,...(d.profile||{})},selected:d.customers.some(c=>c.id===d.selected)?d.selected:(d.customers[0]?.id||null)};state.customers.forEach(c=>{c.transactions=Array.isArray(c.transactions)?c.transactions.map(x=>({...x,type:x.type||'credit'})):[]});storedStateValid=true;restoredFromBackup=true;localStorage.setItem('di_state',JSON.stringify(state));}}}}catch(e){console.error('Automatic restore failed',e)}try{if((storedStateValid||restoredFromBackup)&&window.NativeBackup?.saveSafetyCopy)await window.NativeBackup.saveSafetyCopy(JSON.stringify({format:'dintakurthi-daily-interest',version:2,exportedAt:new Date().toISOString(),...state}),'automatic-backup.json')}catch(e){console.error('Automatic backup initialization failed',e)}const v=window.APP_VERSION;if(v){$('appVersionMeta').textContent='Version '+v.name+' · Build '+v.code;const sv=$('splashVersion');if(sv)sv.textContent='Version '+v.name+' · Build '+v.code}render();window.__hideSplash&&window.__hideSplash();initShopDocuments()}initializeApp();
 </script>
-<script>
-(function(){
- const gate=document.getElementById('authGate'); if(!gate)return;
- const status=document.getElementById('authStatus'), heading=document.getElementById('authHeading'), subtitle=document.getElementById('authSubtitle');
- function message(t){status.textContent=t;}
- document.getElementById('authLogin').addEventListener('click',function(){
-  heading.textContent='Welcome back';subtitle.textContent='Enter your registered mobile number or email to continue.';message('Login selected. Firebase Authentication must be connected before sign-in can work.');
- });
- document.getElementById('authRegister').addEventListener('click',function(){
-  const mobile=document.getElementById('authMobile').value.trim(),email=document.getElementById('authEmail').value.trim();
-  if(!mobile&&!email){message('Please enter your mobile number or email address.');return;}
-  if(mobile&&!/^\\d{10}$/.test(mobile)){message('Please enter a valid 10-digit Indian mobile number.');return;}
-  if(email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){message('Please enter a valid email address.');return;}
-  message('Details look valid. Firebase OTP / account creation is not connected yet.');
- });
- document.getElementById('authGoogle').addEventListener('click',function(){message('Google Sign-In is not connected yet. Firebase configuration is required.');});
- document.getElementById('authTerms').addEventListener('click',e=>{e.preventDefault();message('Terms of Use page will be added before release.');});
- document.getElementById('authPrivacy').addEventListener('click',e=>{e.preventDefault();message('Privacy Policy page will be added before release.');});
-})();
+<script type="module">
+import './firebase-auth.bundle.js';
+const gate=document.getElementById('authGate');
+const status=document.getElementById('authStatus');
+const heading=document.getElementById('authHeading');
+const subtitle=document.getElementById('authSubtitle');
+const $id=id=>document.getElementById(id);
+const message=t=>{status.textContent=t;};
+const auth=()=>window.DailyKhataAuth;
+let busy=false;
+function setBusy(v){busy=v;['authRegister','authLogin','authSendOtp','authVerifyOtp','authGoogle'].forEach(id=>$id(id).disabled=v);}
+function enterApp(user){if(!user)return;gate.style.display='none';localStorage.setItem('dailykhata_auth_uid',user.uid||'');}
+async function run(fn){if(busy)return;setBusy(true);try{const user=await fn();if(user)enterApp(user);}catch(e){console.error('Firebase Authentication:',e);message(auth().errorText(e));}finally{setBusy(false);}}
+$id('authRegister').addEventListener('click',()=>run(async()=>{
+ const email=$id('authEmail').value.trim(),password=$id('authPassword').value;
+ if(!email||!password)throw new Error('Email మరియు Password ఇవ్వండి.');
+ if(password.length<6)throw new Error('Password కనీసం 6 అక్షరాలు ఉండాలి.');
+ const user=await auth().registerEmail(email,password);message('Account create అయింది.');return user;
+}));
+$id('authLogin').addEventListener('click',()=>run(async()=>{
+ const email=$id('authEmail').value.trim(),password=$id('authPassword').value;
+ if(!email||!password)throw new Error('Email మరియు Password ఇవ్వండి.');
+ const user=await auth().loginEmail(email,password);message('Login successful.');return user;
+}));
+$id('authSendOtp').addEventListener('click',()=>run(async()=>{
+ const mobile=$id('authMobile').value.replace(/\D/g,'');
+ if(!/^\d{10}$/.test(mobile))throw new Error('సరైన 10-digit Mobile Number ఇవ్వండి.');
+ await auth().sendPhoneOtp('+91'+mobile,()=>{$id('authOtpArea').hidden=false;message('OTP పంపించాం. SMS లో వచ్చిన 6-digit code నమోదు చేయండి.');},user=>{if(user){message('Phone verified.');enterApp(user);}},e=>message(auth().errorText(e)));
+ $id('authOtpArea').hidden=false;message('OTP పంపించాం. SMS కోసం వేచి ఉండండి.');
+}));
+$id('authVerifyOtp').addEventListener('click',()=>run(async()=>{
+ const code=$id('authOtp').value.trim();if(!/^\d{6}$/.test(code))throw new Error('6-digit OTP నమోదు చేయండి.');
+ const user=await auth().verifyPhoneOtp(code);message('Mobile number verified.');return user;
+}));
+$id('authGoogle').addEventListener('click',()=>run(async()=>{const user=await auth().googleLogin();message('Google Login successful.');return user;}));
+$id('authTerms').addEventListener('click',e=>{e.preventDefault();message('Terms page release ముందు జోడిస్తాం.');});
+$id('authPrivacy').addEventListener('click',e=>{e.preventDefault();message('Privacy Policy release ముందు జోడిస్తాం.');});
+(async()=>{try{const user=await auth().getCurrentUser();if(user)enterApp(user);}catch(e){console.info('No existing Firebase session yet',e);}})();
 </script>
 \n</body></html>
