@@ -42,11 +42,12 @@
   <div class="auth-input-wrap"><span class="auth-prefix" style="border:0;font-size:22px">✉</span><input id="authEmail" type="email" placeholder="Enter your email" autocomplete="email"></div>
   <label class="auth-label" for="authPassword">PASSWORD (EMAIL LOGIN)</label>
   <div class="auth-input-wrap"><input id="authPassword" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="current-password"></div>
-  <div class="auth-actions"><button class="auth-btn primary" id="authRegister" type="button">Register</button><button class="auth-btn" id="authLogin" type="button">Login</button></div>
+  <div class="auth-actions"><button class="auth-btn primary" id="authRegister" type="button">Create Account</button><button class="auth-btn" id="authLogin" type="button" hidden>Login</button></div>
   <button class="auth-btn" id="authSendOtp" type="button" style="width:100%;margin-bottom:14px">Send Mobile OTP</button>
   <div id="authOtpArea" hidden><label class="auth-label" for="authOtp">ENTER OTP</label><div class="auth-input-wrap"><input id="authOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" autocomplete="one-time-code"></div><button class="auth-btn primary" id="authVerifyOtp" type="button" style="width:100%;margin-bottom:14px">Verify OTP</button></div>
   <button class="auth-google" id="authGoogle" type="button"><span class="auth-google-mark">G</span>Continue with Google</button>
   <p class="auth-terms">By continuing, you agree to our <a href="#" id="authTerms">Terms</a> &amp; <a href="#" id="authPrivacy">Privacy Policy</a></p>
+  <p class="auth-switch" style="text-align:center;margin:14px 0 0;font-size:14px;color:#5d4a70"><span id="authSwitchPrompt">Already have an account?</span> <button type="button" id="authSwitch" style="padding:4px 6px;background:transparent;color:#6d35b5;text-decoration:underline">Login</button></p>
   <p class="auth-status" id="authStatus" role="status" aria-live="polite"></p>
  </section>
 </div>
@@ -272,7 +273,9 @@ const subtitle=document.getElementById('authSubtitle');
 const $id=id=>document.getElementById(id);
 const message=t=>{status.textContent=t;};
 const auth=()=>window.DailyKhataAuth;
-let busy=false;
+let busy=false,authMode='register';
+function setMode(mode){authMode=mode;const registering=mode==='register';heading.textContent=registering?'Create your account':'Welcome back';subtitle.textContent=registering?'Register with your email and password, or verify your mobile number.':'Login with your email and password, mobile OTP, or Google.';$id('authRegister').hidden=!registering;$id('authLogin').hidden=registering;$id('authSendOtp').hidden=registering;$id('authOtpArea').hidden=true;$id('authSwitchPrompt').textContent=registering?'Already have an account?':\"Don't have an account?\";$id('authSwitch').textContent=registering?'Login':'Register';message('');}
+$id('authSwitch').addEventListener('click',()=>setMode(authMode==='register'?'login':'register'));
 function setBusy(v){busy=v;['authRegister','authLogin','authSendOtp','authVerifyOtp','authGoogle'].forEach(id=>$id(id).disabled=v);}
 function enterApp(user){if(!user)return;gate.style.display='none';localStorage.setItem('dailykhata_auth_uid',user.uid||'');}
 async function run(fn){if(busy)return;setBusy(true);try{const user=await fn();if(user)enterApp(user);}catch(e){console.error('Firebase Authentication:',e);message(auth().errorText(e));}finally{setBusy(false);}}
@@ -300,6 +303,7 @@ $id('authVerifyOtp').addEventListener('click',()=>run(async()=>{
 $id('authGoogle').addEventListener('click',()=>run(async()=>{const user=await auth().googleLogin();message('Google Login successful.');return user;}));
 $id('authTerms').addEventListener('click',e=>{e.preventDefault();message('Terms page release ముందు జోడిస్తాం.');});
 $id('authPrivacy').addEventListener('click',e=>{e.preventDefault();message('Privacy Policy release ముందు జోడిస్తాం.');});
+setMode('register');
 (async()=>{try{const user=await auth().getCurrentUser();if(user)enterApp(user);}catch(e){console.info('No existing Firebase session yet',e);}})();
 </script>
 </body></html>
