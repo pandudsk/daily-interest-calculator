@@ -7,10 +7,9 @@
 @media print{body{background:#fff;padding:0}header,.tabs,.no-print,footer{display:none!important}main{padding:0;max-width:none}.card{box-shadow:none;break-inside:avoid}.print-heading{display:block}.tablewrap{overflow:visible;border:0}table{min-width:0;font-size:9px}th{position:static}}
 .menu-btn{font-size:25px;min-width:40px;min-height:40px;display:grid;place-items:center;padding:0;position:relative}.reminder-dot{position:absolute;right:2px;top:2px;width:9px;height:9px;border-radius:50%;background:#ff303b;border:2px solid #fff;display:none}.menu-btn.has-reminders .reminder-dot{display:block}.doc-card{border:1px solid var(--line);border-radius:13px;padding:12px;margin:10px 0;background:#fff}.doc-status{font-size:11px;font-weight:800}.doc-status.due{color:#c62828}.doc-status.soon{color:#a45b00}.doc-status.ok{color:#18834a}.profile-photo{width:82px;height:82px;object-fit:cover;border-radius:16px;border:1px solid var(--line);background:var(--lav2)}.doc-preview{max-width:100%;max-height:180px;border-radius:10px;margin-top:8px}
 /* Registration / Login gate — Daily Khata Book */
-.auth-gate{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;overflow:auto;padding:22px 14px;background:radial-gradient(ellipse at 12% 18%,#fff3d6 0 22%,transparent 48%),radial-gradient(ellipse at 92% 78%,#ffe4a7 0 18%,transparent 48%),linear-gradient(145deg,#512078 0%,#6d35b5 38%,#f0a21a 100%)}
-.auth-gate:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background:repeating-linear-gradient(0deg,transparent 0 31px,#9b5425 32px,#9b5425 33px),linear-gradient(90deg,transparent 0 18px,#d77c35 19px,transparent 20px)}
-.auth-gate:after{content:"";position:fixed;left:-8%;right:-8%;bottom:-42px;height:105px;background:#6d35b5;border-top:7px solid #ffb21c;border-radius:50% 50% 0 0/28% 28% 0 0;pointer-events:none}
-.auth-card{position:relative;z-index:1;width:min(100%,540px);background:rgba(255,255,255,.97);border:1px solid #e6e0eb;border-radius:30px;padding:30px 25px 24px;box-shadow:0 18px 55px #28113d40;color:#21172e}
+.auth-gate{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px 14px;background:linear-gradient(145deg,#f1eafd 0%,#faf8ff 52%,#eee7fb 100%)}
+.auth-gate:before,.auth-gate:after{display:none}
+.auth-card{position:relative;z-index:1;width:min(100%,540px);background:#fff;border:1px solid #e4dfeb;border-radius:30px;padding:34px 25px 28px;box-shadow:0 10px 35px #38205b12;color:#21172e}
 .auth-title{font-size:clamp(27px,6vw,36px);line-height:1.15;font-weight:800;letter-spacing:-1.2px;margin:0 0 12px;color:#171326}
 .auth-subtitle{font-size:16px;line-height:1.55;color:#81798c;margin:0 0 26px}
 .auth-label{display:block;font-size:13px;letter-spacing:1.5px;font-weight:750;color:#777083;margin:0 0 10px 5px}
@@ -300,7 +299,7 @@ $('authLogin').addEventListener('click',()=>run('loginStatus',async()=>{
  if(!identifier||!password)throw new Error('Phone number లేదా Email మరియు Password ఇవ్వండి.');
  if(!identifier.includes('@'))throw new Error('Firebase Free plan‌లో Phone + Password login అందుబాటులో లేదు. Email + Password ఉపయోగించండి. Phone login కోసం backend అవసరం.');
  const user=await auth().loginEmail(identifier,password);
- const fresh=await auth().getCurrentUser();
+ const fresh=await auth().reloadCurrentUser();
  if(!fresh?.emailVerified){await auth().sendEmailVerification();await auth().signOut();throw new Error('మీ Email ఇంకా verify కాలేదు. మళ్లీ verification link పంపించాం. Email verify చేసి Login చేయండి.');}
  return user;
 }));
