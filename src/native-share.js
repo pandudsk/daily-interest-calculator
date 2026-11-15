@@ -41,7 +41,7 @@ function renderStatementPages(data) {
   const sections=[
     {title:'APPULU / CREDIT LEDGER',rows:(data.appulu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
     {title:'JAMALU / DEBIT LEDGER',rows:(data.jamalu?.rows||[]).map(r=>[date(r.date),String(r.days||0),money(r.opening),money(r.interest),money(r.added),money(r.closing),r.detail||''])},
-    {title:'TRANSACTION HISTORY',rows:(data.transactions||[]).map(t=>[date(t.date),(t.type==='credit'?'APPULU / CREDIT':'JAMALU / DEBIT')+(t.description?' — '+t.description:''),money(t.amount)])}
+    {title:'ACCOUNT TRANSACTION HISTORY',rows:(()=>{let balance=Number(data.openingBalance)||0;const rows=[[date(data.periodStart),'OPENING BALANCE','—','—',money(balance)]];(data.transactions||[]).forEach(t=>{const credit=t.type==='credit'?Number(t.amount)||0:0,debit=t.type==='debit'?Number(t.amount)||0:0;balance+=credit-debit;rows.push([date(t.date),t.description|| (t.type==='credit'?'Appulu / Credit':'Jamalu / Debit'),credit?money(credit):'—',debit?money(debit):'—',money(balance)])});const ai=Number(data.appulu?.interest)||0,ji=Number(data.jamalu?.interest)||0;balance+=ai-ji;rows.push([date(data.periodEnd),'INTEREST FOR PERIOD',ai?money(ai):'—',ji?money(ji):'—',money(balance)]);return rows})()}
   ];
   let pageNo=0,ctx,canvas,y;
   function newPage(){
@@ -73,7 +73,7 @@ function renderStatementPages(data) {
   heading('FINAL SETTLEMENT');
   table(['Particulars','Amount'],[['Opening Balance',money(data.openingBalance)],['Net Appulu / Jamalu added',money((data.appulu?.periodAdded||0)-(data.jamalu?.periodAdded||0))],['Net interest for period',money((data.appulu?.interest||0)-(data.jamalu?.interest||0))],['Closing Balance',money(data.closingBalance)]],[0.68,0.32]);
   sections.forEach(sec=>{heading(sec.title);if(!sec.rows.length){ctx.fillStyle='#766b84';ctx.font='20px Arial';ctx.fillText('No entries',M,y);y+=48;return}
-    if(sec.title==='TRANSACTION HISTORY')table(['Date','Transaction type','Amount'],sec.rows,[0.28,0.48,0.24]);
+    if(sec.title==='ACCOUNT TRANSACTION HISTORY')table(['Date','Particulars','Appulu','Jamalu','Balance'],sec.rows,[0.17,0.31,0.17,0.17,0.18]);
     else table(['Date','Days','Opening','Interest','Added','Closing','Details'],sec.rows,[0.15,0.08,0.15,0.14,0.13,0.15,0.20]);
   });
   footer();return pages;
@@ -97,7 +97,7 @@ async function generateStatement(data) {
   const shareDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
   const filename = `${safeName}_${shareDate}.pdf`;
   const base64=bytesToBase64(pdf);
-  const prepared={filename,title:`Daily Interest Statement - ${customerName}`,base64,pages:pageImages};
+  const prepared={filename,title:`Daily Interest Statement - ${customerName}`,periodStart:data.periodStart,periodEnd:data.periodEnd,base64,pages:pageImages};
   if (Capacitor.isNativePlatform()) {
     const saved=await Filesystem.writeFile({path:filename,data:base64,directory:Directory.Cache,recursive:true});
     prepared.uri=saved.uri;
