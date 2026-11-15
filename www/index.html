@@ -91,8 +91,8 @@ function renderReportDetail(){
   function renderDetail(){
    detail.innerHTML='';
    if(type.value==='oneMonth'){field('Select Month',input('month',currentYear+'-'+currentMonth));}
-   else if(type.value==='quarterly'){field('Quarter',select([['1','Q1 · Jan–Mar'],['2','Q2 · Apr–Jun'],['3','Q3 · Jul–Sep'],['4','Q4 · Oct–Dec']]));field('Year',input('number',String(currentYear)));}
-   else if(type.value==='halfYearly'){field('Half Year',select([['1','H1 · Jan–Jun'],['2','H2 · Jul–Dec']]));field('Year',input('number',String(currentYear)));}
+   else if(type.value==='quarterly'){let q=field('Quarter',select([['1','Q1 · Jan–Mar'],['2','Q2 · Apr–Jun'],['3','Q3 · Jul–Sep'],['4','Q4 · Oct–Dec']]));q.value=String(Math.floor(now.getMonth()/3)+1);field('Year',input('number',String(currentYear)));}
+   else if(type.value==='halfYearly'){let half=field('Half Year',select([['1','H1 · Jan–Jun'],['2','H2 · Jul–Dec']]));half.value=now.getMonth()<6?'1':'2';field('Year',input('number',String(currentYear)));}
    else if(type.value==='yearly'){field('Calendar Year',input('number',String(currentYear)));}
    else {field('From Date',input('date',currentYear+'-'+currentMonth+'-01'));field('To Date',input('date',todayISO()));}
   }
