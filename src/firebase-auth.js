@@ -7,6 +7,8 @@ const userOf = result => result?.user || null;
 export const getCurrentUser = async () => userOf(await FirebaseAuthentication.getCurrentUser());
 export const registerEmail = async (email,password) => userOf(await FirebaseAuthentication.createUserWithEmailAndPassword({email,password}));
 export const loginEmail = async (email,password) => userOf(await FirebaseAuthentication.signInWithEmailAndPassword({email,password}));
+export const sendEmailVerification = async () => FirebaseAuthentication.sendEmailVerification();
+export const reloadCurrentUser = async () => { await FirebaseAuthentication.reload(); return userOf(await FirebaseAuthentication.getCurrentUser()); };
 export async function sendPhoneOtp(phoneNumber,onSent,onAuto,onError){
   await clean(); verificationId=null;
   phoneListeners.push(await FirebaseAuthentication.addListener('phoneCodeSent',e=>{verificationId=e.verificationId;onSent?.(e)}));
@@ -36,4 +38,4 @@ export function errorText(e){
  'OTP_VERIFICATION_NOT_STARTED':'ముందుగా OTP పంపించండి.'
  }; return m[c]||e?.message||'Login విఫలమైంది. మళ్లీ ప్రయత్నించండి.';
 }
-window.DailyKhataAuth={getCurrentUser,registerEmail,loginEmail,sendPhoneOtp,verifyPhoneOtp,googleLogin,signOut,errorText};
+window.DailyKhataAuth={getCurrentUser,registerEmail,loginEmail,sendEmailVerification,reloadCurrentUser,sendPhoneOtp,verifyPhoneOtp,googleLogin,signOut,errorText};
