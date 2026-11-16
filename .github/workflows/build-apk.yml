@@ -285,6 +285,44 @@ jobs:
           PY
           npx cap copy android
 
+      - name: Enforce Android launcher icon resources
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          res = Path("android/app/src/main/res")
+          values = res / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          (values / "ic_launcher_background.xml").write_text("""<resources>
+            <color name="ic_launcher_background">#6D35B5</color>
+          </resources>
+          """)
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          app_match = re.search(r"<application\\b[^>]*>", text)
+          if not app_match:
+              raise SystemExit("Android application tag not found; cannot safely set launcher icon.")
+          tag = app_match.group(0)
+          tag = re.sub(r'\\s+android:icon="[^"]*"', "", tag)
+          tag = re.sub(r'\\s+android:roundIcon="[^"]*"', "", tag)
+          tag = tag[:-1] + ' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
+          text = text[:app_match.start()] + tag + text[app_match.end():]
+          manifest.write_text(text)
+
+          for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
+              path = res / "mipmap-anydpi-v26" / name
+              if not path.is_file():
+                  raise SystemExit(f"Adaptive launcher icon missing: {path}")
+          for density in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
+              for name in ("ic_launcher.png", "ic_launcher_round.png"):
+                  path = res / f"mipmap-{density}" / name
+                  if not path.is_file() or path.stat().st_size < 100:
+                      raise SystemExit(f"Launcher PNG missing or invalid: {path}")
+          print("Verified legacy PNG, adaptive icon XML, background color and manifest references.")
+          PY
+
       - name: Set purple Android launch background
         run: |
           mkdir -p android/app/src/main/res/drawable android/app/src/main/res/values
