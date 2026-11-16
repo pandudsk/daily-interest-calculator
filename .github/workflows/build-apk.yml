@@ -360,8 +360,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 34', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.33"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 35', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.34"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -372,7 +372,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.33", code: 34 };
+          window.APP_VERSION = { name: "1.34", code: 35 };
           EOF
           npx cap copy android
 
@@ -422,8 +422,8 @@ jobs:
           match = re.search(r"<application[^>]*>", text)
           if not match:
               raise SystemExit("Android application tag missing")
-          tag = re.sub(r'\\s+android:icon="[^"]*"', "", match.group(0))
-          tag = re.sub(r'\\s+android:roundIcon="[^"]*"', "", tag)
+          tag = re.sub(r'\s+android:icon="[^"]*"', "", match.group(0))
+          tag = re.sub(r'\s+android:roundIcon="[^"]*"', "", tag)
           tag = tag[:-1] + ' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
           manifest.write_text(text[:match.start()] + tag + text[match.end():])
           # Fail the build unless both adaptive and legacy logo resources are present.
