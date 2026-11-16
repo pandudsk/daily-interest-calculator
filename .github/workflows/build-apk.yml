@@ -360,8 +360,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 33', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.32"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 34', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.33"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -372,9 +372,66 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.32", code: 33 };
+          window.APP_VERSION = { name: "1.33", code: 34 };
           EOF
           npx cap copy android
+
+      # Capacitor copy/sync can restore template launcher resources. Re-apply the
+      # branded launcher assets AFTER the final copy so Android packages our logo.
+      - name: Re-apply branded launcher icon after final Capacitor copy
+        run: |
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import re
+          assets = Path("www/assets")
+          icon_path = assets / "app-icon-original.png"
+          if not icon_path.is_file():
+              raise SystemExit("Missing original branded app icon")
+          icon = Image.open(icon_path).convert("RGBA")
+          if icon.size != (1024, 1024):
+              raise SystemExit(f"Expected 1024x1024 app icon, got {icon.size}")
+          root = Path("android/app/src/main/res")
+          canvas = Image.new("RGBA", (1024, 1024), "#6D35B5")
+          mark = icon.copy()
+          mark.thumbnail((920, 920), Image.Resampling.LANCZOS)
+          canvas.alpha_composite(mark, ((1024-mark.width)//2, (1024-mark.height)//2))
+          for density, pixels in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
+              folder = root / f"mipmap-{density}"
+              folder.mkdir(parents=True, exist_ok=True)
+              resized = canvas.resize((pixels,pixels), Image.Resampling.LANCZOS)
+              resized.save(folder / "ic_launcher.png", optimize=True)
+              resized.save(folder / "ic_launcher_round.png", optimize=True)
+          foreground = Image.new("RGBA", (1024,1024), (0,0,0,0))
+          mark = icon.copy()
+          mark.thumbnail((660,660), Image.Resampling.LANCZOS)
+          foreground.alpha_composite(mark, ((1024-mark.width)//2, (1024-mark.height)//2))
+          nodpi = root / "drawable-nodpi"
+          nodpi.mkdir(parents=True, exist_ok=True)
+          foreground.save(nodpi / "ic_launcher_foreground.png", optimize=True)
+          adaptive = root / "mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+          xml = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background" /><foreground android:drawable="@drawable/ic_launcher_foreground" /></adaptive-icon>'
+          (adaptive / "ic_launcher.xml").write_text(xml)
+          (adaptive / "ic_launcher_round.xml").write_text(xml)
+          values = root / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          (values / "ic_launcher_background.xml").write_text('<resources><color name="ic_launcher_background">#6D35B5</color></resources>')
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          match = re.search(r"<application[^>]*>", text)
+          if not match:
+              raise SystemExit("Android application tag missing")
+          tag = re.sub(r'\\s+android:icon="[^"]*"', "", match.group(0))
+          tag = re.sub(r'\\s+android:roundIcon="[^"]*"', "", tag)
+          tag = tag[:-1] + ' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
+          manifest.write_text(text[:match.start()] + tag + text[match.end():])
+          # Fail the build unless both adaptive and legacy logo resources are present.
+          for path in [adaptive/"ic_launcher.xml", adaptive/"ic_launcher_round.xml", nodpi/"ic_launcher_foreground.png"]:
+              if not path.is_file() or path.stat().st_size < 100:
+                  raise SystemExit(f"Branded adaptive icon resource missing: {path}")
+          print("Branded launcher icon re-applied after final Capacitor copy.")
+          PY
 
       - name: Build Debug APK
         working-directory: android
