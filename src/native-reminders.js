@@ -4,6 +4,12 @@ const idsFor=id=>{let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0
 window.NativeReminders={
  async checkPermission(){return await LocalNotifications.checkPermissions();},
  async requestPermission(){return await LocalNotifications.requestPermissions();},
+ async cancel(){
+  const pending=await LocalNotifications.getPending();
+  const old=pending.notifications.filter(x=>x.id>=BASE&&x.id<2147483000).map(x=>({id:x.id}));
+  if(old.length)await LocalNotifications.cancel({notifications:old});
+  return {cancelled:old.length};
+ },
  async sync(docs){
   const permission=await LocalNotifications.checkPermissions();
   if(permission.display!=='granted')return {scheduled:0,permission:permission.display};
