@@ -190,6 +190,24 @@ jobs:
                 JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+filename);call.resolve(result);
               } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
             }
+            @PluginMethod public void openBackup(PluginCall call) {
+              try {
+                android.content.ContentResolver resolver=getContext().getContentResolver();
+                Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                String[] args=new String[]{"automatic-backup.json",Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"};
+                Uri target=null;
+                try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
+                  if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
+                }
+                if(target==null){call.reject("Automatic backup file not found in Downloads");return;}
+                android.content.Intent intent=new android.content.Intent(android.content.Intent.ACTION_VIEW);
+                intent.setDataAndType(target,"application/json");
+                intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                getActivity().startActivity(android.content.Intent.createChooser(intent,"Open Daily Khata Book backup"));
+                JSObject result=new JSObject();result.put("opened",true);call.resolve(result);
+              } catch(Exception e){call.reject("Could not open backup file",e);}
+            }
           }
           JAVA
 
