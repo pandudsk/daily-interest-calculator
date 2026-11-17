@@ -1,6 +1,7 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+const NativeBackupDownloads = registerPlugin('NativeBackupDownloads');
 const AUTO_BACKUP = 'automatic-backup.json';
 
 async function shareBackup(json, filename) {
@@ -43,6 +44,8 @@ async function saveSafetyCopy(json, filename = AUTO_BACKUP) {
  }
  await Filesystem.writeFile({path:filename,data:json,directory:Directory.Data,encoding:'utf8',recursive:true});
  if(filename===AUTO_BACKUP) {
+  const publicCopy = await NativeBackupDownloads.saveToDownloads({filename:'automatic-backup.json', content:json});
+  window.__dailyKhataBackupDownloadUri = publicCopy?.uri || null;
   const verified=await readRaw(AUTO_BACKUP);
   if(!verified || verified!==json) throw new Error('Automatic backup verification failed after write.');
  }
@@ -53,10 +56,10 @@ async function readSafetyCopy() { return readRaw(AUTO_BACKUP); }
 
 async function getSafetyCopyInfo() {
  const raw=await readRaw(AUTO_BACKUP);
- if(!raw) return {available:false,verified:false,customers:0,transactions:0,exportedAt:null};
+ if(!raw) return {available:false,verified:false,customers:0,transactions:0,exportedAt:null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
  try {
   const data=JSON.parse(raw), c=counts(data);
-  return {available:true,verified:Array.isArray(data.customers)&&!!data.settings,customers:c.customers,transactions:c.transactions,exportedAt:data.exportedAt||null};
+  return {available:true,verified:Array.isArray(data.customers)&&!!data.settings,customers:c.customers,transactions:c.transactions,exportedAt:data.exportedAt||null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
  } catch (_) { return {available:true,verified:false,customers:0,transactions:0,exportedAt:null}; }
 }
 
