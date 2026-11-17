@@ -29,7 +29,48 @@ body.auth-active .bottom-nav,body.auth-active>header,body.auth-active>main{displ
 .auth-terms a{color:#21172e;font-weight:700;text-decoration:underline}
 .auth-forgot{text-align:right;margin:-10px 2px 14px}.auth-link{padding:5px 2px;background:transparent;color:#6d35b5;text-decoration:underline;font-weight:700;border-radius:6px}.auth-status{font-size:13px;line-height:1.5;color:#6d35b5;min-height:18px;margin:12px 2px 0}
 @media(max-width:380px){.auth-card{padding:25px 18px 20px;border-radius:24px}.auth-subtitle{font-size:14px}.auth-input-wrap{min-height:56px}.auth-btn{min-height:56px;font-size:15px}}
-.tx-description-row{display:flex;align-items:center;gap:7px}.tx-description-row input{flex:1;min-width:0}.tx-attach-btn{width:46px;min-width:46px;height:44px;padding:0;font-size:20px}.tx-attachments-meta{font-size:11px;color:var(--deep);margin-top:5px}.stored-file-row{padding:10px 0;border-bottom:1px solid var(--line)}.stored-file-name{font-size:13px;font-weight:750;overflow-wrap:anywhere}.stored-file-meta{font-size:11px;color:var(--muted);margin-top:3px}.stored-file-row .actions{margin-top:7px}</style></head><body class="auth-active">
+.tx-description-row{display:flex;align-items:center;gap:7px}.tx-description-row input{flex:1;min-width:0}.tx-attach-btn{width:46px;min-width:46px;height:44px;padding:0;font-size:20px}.tx-attachments-meta{font-size:11px;color:var(--deep);margin-top:5px}.stored-file-row{padding:10px 0;border-bottom:1px solid var(--line)}.stored-file-name{font-size:13px;font-weight:750;overflow-wrap:anywhere}.stored-file-meta{font-size:11px;color:var(--muted);margin-top:3px}.stored-file-row .actions{margin-top:7px}
+/* Approved original floating navigation reference */
+.bottom-nav{
+ position:fixed;left:14px;right:14px;bottom:calc(10px + env(safe-area-inset-bottom,0px));
+ z-index:40;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;gap:5px;
+ padding:12px 10px calc(12px + env(safe-area-inset-bottom,0px));
+ background:#fff;border:1px solid #eee8f5;border-radius:42px;
+ box-shadow:0 8px 26px #35204420;overflow:visible;min-height:112px
+}
+.bottom-nav .tab{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+ min-width:0;min-height:82px;padding:7px 3px;background:transparent;color:#777080;
+ border:0;border-radius:28px;font-size:14px;font-weight:800;line-height:1.15;
+ box-shadow:none;white-space:normal;transition:background .18s ease,color .18s ease
+}
+.bottom-nav .tab.active{color:#5d2993;background:#f3eafa;transform:none;box-shadow:none}
+.bottom-nav .nav-icon{
+ display:grid;place-items:center;width:52px;height:52px;border:0;border-radius:0;
+ background:transparent;color:#777080;box-shadow:none;transform:none
+}
+.bottom-nav .nav-icon svg{display:block;width:46px;height:46px;filter:none;stroke-width:2.1}
+.bottom-nav .tab.active .nav-icon{background:transparent;border:0;box-shadow:none;color:#6d35b5}
+.bottom-nav .tab[data-tab="transactions"]{color:#542487;min-height:92px;margin-top:-32px;z-index:2;background:transparent}
+.bottom-nav .tab[data-tab="transactions"] .nav-icon{
+ width:92px;height:92px;margin-bottom:0;border:8px solid #fff;border-radius:50%;
+ background:linear-gradient(145deg,#a65be0,#6720b2);color:#fff;font-size:54px;line-height:1;
+ box-shadow:0 5px 18px #4b1b7b30;transform:none
+}
+.bottom-nav .tab[data-tab="transactions"] .nav-icon svg{width:48px;height:48px;filter:none;stroke-width:2.5}
+.bottom-nav .tab[data-tab="transactions"] span:last-child{color:#542487;font-size:14px;font-weight:850}
+.bottom-nav .tab[data-tab="transactions"].active{background:transparent;box-shadow:none}
+body{padding-bottom:150px}
+@media(max-width:390px){
+ .bottom-nav{left:8px;right:8px;min-height:98px;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));border-radius:34px}
+ .bottom-nav .tab{font-size:11px;gap:5px;min-height:72px}
+ .bottom-nav .nav-icon{width:42px;height:42px}
+ .bottom-nav .nav-icon svg{width:38px;height:38px}
+ .bottom-nav .tab[data-tab="transactions"] .nav-icon{width:78px;height:78px;border-width:7px}
+ .bottom-nav .tab[data-tab="transactions"] span:last-child{font-size:11px}
+}
+
+</style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
  <section class="auth-card" id="registrationPage" aria-label="Registration page">
