@@ -204,7 +204,15 @@ jobs:
                 values.put(MediaStore.MediaColumns.MIME_TYPE,mime);
                 values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
                 values.put(MediaStore.MediaColumns.IS_PENDING,1);
-                Uri target=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+                Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                String[] args=new String[]{filename,relative+"/"};
+                Uri target=null;
+                try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
+                  if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
+                }
+                if(target==null)target=resolver.insert(collection,values);
+                else resolver.update(target,values,null,null);
                 if(target==null)throw new Exception("Could not create file in Downloads");
                 try(OutputStream out=resolver.openOutputStream(target,"w")){
                   if(out==null)throw new Exception("Could not open output file");
