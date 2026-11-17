@@ -370,27 +370,36 @@ $('authPrivacy').addEventListener('click',e=>{e.preventDefault();$('registerStat
 showPage('register');
 (async()=>{try{const user=await auth().getCurrentUser();if(user){const fresh=await auth().getCurrentUser();if(fresh?.emailVerified||fresh?.providerId==='google.com')enterApp(user);else await auth().signOut();}}catch(e){console.info('No existing Firebase session yet',e);}})();
 
-// Notification permission controls
+// Native Android notification permission controls (with browser fallback).
 (function(){
  const status=document.getElementById('notificationPermissionStatus');
  const button=document.getElementById('enableAppNotifications');
  const note=document.getElementById('notificationPermissionNote');
  if(!status||!button||!note)return;
- function refresh(){
-  if(!('Notification' in window)){status.textContent='Not supported';button.disabled=true;note.textContent='Notifications are not supported by this app environment.';return;}
-  const p=Notification.permission;
+ const native=!!(window.Capacitor?.isNativePlatform?.()&&window.NativeReminders);
+ async function refresh(){
+  let p='prompt';
+  try{
+   if(native){const result=await window.NativeReminders.checkPermission();p=result.display||'prompt';}
+   else if('Notification' in window)p=Notification.permission;
+   else {status.textContent='Not supported';button.disabled=true;note.textContent='Notifications are not supported by this app environment.';return;}
+  }catch(e){status.textContent='Unavailable';button.disabled=false;note.textContent='Could not read notification permission. Try enabling it again.';return;}
   status.textContent=p==='granted'?'Enabled':p==='denied'?'Blocked':'Not enabled';
   button.textContent=p==='granted'?'Notifications enabled':p==='denied'?'Open device settings':'Enable notifications';
   button.disabled=p==='granted';
-  if(p==='denied')note.textContent='Notifications are blocked. Allow them in your device app settings.';
-  else if(p==='granted')note.textContent='Permission granted. You can manage notification preferences in device settings.';
-  else note.textContent='Tap Enable notifications and allow permission when your device asks.';
+  if(p==='denied')note.textContent='Notifications are blocked. Allow them in Android Settings → Apps → Daily Khata Book → Notifications.';
+  else if(p==='granted')note.textContent='Permission enabled. Document renewal reminders can appear in Android notifications.';
+  else note.textContent='Tap Enable notifications and allow permission when Android asks.';
  }
  button.addEventListener('click',async()=>{
-  if(!('Notification' in window)){refresh();return;}
-  if(Notification.permission==='denied'){note.textContent='Open Android Settings → Apps → Daily Khata Book → Notifications to allow notifications.';return;}
-  try{await Notification.requestPermission();}catch(e){note.textContent='Could not request notification permission in this environment.';}
-  refresh();
+  try{
+   let p;
+   if(native)p=(await window.NativeReminders.requestPermission()).display;
+   else if('Notification' in window)p=await Notification.requestPermission();
+   else {await refresh();return;}
+   await refresh();
+   if(p==='granted'&&native)await window.dispatchEvent(new Event('native-reminder-permission-granted'));
+  }catch(e){note.textContent='Could not enable notifications. Check Android app notification settings.';await refresh();}
  });
  refresh();
 })();
