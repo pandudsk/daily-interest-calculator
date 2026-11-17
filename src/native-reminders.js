@@ -2,10 +2,11 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 const BASE=730000;
 const idsFor=id=>{let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;const b=BASE+(h%1000000)*3;return [b,b+1,b+2]};
 window.NativeReminders={
+ async checkPermission(){return await LocalNotifications.checkPermissions();},
+ async requestPermission(){return await LocalNotifications.requestPermissions();},
  async sync(docs){
   const permission=await LocalNotifications.checkPermissions();
-  const granted=permission.display==='granted'||(await LocalNotifications.requestPermissions()).display==='granted';
-  if(!granted)throw new Error('Notification permission was not granted');
+  if(permission.display!=='granted')return {scheduled:0,permission:permission.display};
   const pending=await LocalNotifications.getPending();
   const old=pending.notifications.filter(n=>n.id>=BASE&&n.id<2147483000).map(n=>({id:n.id}));
   if(old.length)await LocalNotifications.cancel({notifications:old});
