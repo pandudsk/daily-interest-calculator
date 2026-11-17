@@ -190,6 +190,31 @@ jobs:
                 JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+filename);call.resolve(result);
               } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
             }
+            @PluginMethod public void saveFile(PluginCall call) {
+              String folder=call.getString("folder","Transactions");
+              String filename=call.getString("filename","attachment.bin");
+              String base64=call.getString("base64");
+              String mime=call.getString("mimeType","application/octet-stream");
+              if(base64==null){call.reject("File content is missing");return;}
+              try {
+                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
+                android.content.ContentResolver resolver=getContext().getContentResolver();
+                ContentValues values=new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME,filename);
+                values.put(MediaStore.MediaColumns.MIME_TYPE,mime);
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
+                values.put(MediaStore.MediaColumns.IS_PENDING,1);
+                Uri target=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+                if(target==null)throw new Exception("Could not create file in Downloads");
+                try(OutputStream out=resolver.openOutputStream(target,"w")){
+                  if(out==null)throw new Exception("Could not open output file");
+                  out.write(android.util.Base64.decode(base64,android.util.Base64.DEFAULT));out.flush();
+                }
+                ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);
+                resolver.update(target,done,null,null);
+                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+folder+"/"+filename);call.resolve(result);
+              } catch(Exception e){call.reject("Could not copy file into Downloads",e);}
+            }
             @PluginMethod public void openBackup(PluginCall call) {
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();
