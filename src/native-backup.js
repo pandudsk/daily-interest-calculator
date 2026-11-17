@@ -2,6 +2,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 const NativeBackupDownloads = registerPlugin('NativeBackupDownloads');
+window.NativeBackupDownloads = NativeBackupDownloads;
 const AUTO_BACKUP = 'automatic-backup.json';
 
 async function shareBackup(json, filename) {
