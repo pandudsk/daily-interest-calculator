@@ -110,7 +110,7 @@ body.auth-active .bottom-nav,body.auth-active>header,body.auth-active>main{displ
 <section id="reports" class="hidden"><div class="card"><h2>Customer Reports</h2><p class="muted">Select a customer to view their separate ledger summary and statement.</p><div id="reportCards" class="report-grid"></div><div id="reportDetail" class="report-detail hidden"></div></div></section>
 <section id="reminders" class="hidden"><div class="card"><h2>🔔 Document Renewal Reminders</h2><p class="muted">Shop Profile documents · 30 days, 7 days and expiry-day alerts</p><div id="documentReminders"><p class="muted">No document renewal reminders yet. Add document expiry dates in Settings → Shop Profile.</p></div></div></section>
 <section id="settings" class="hidden">
-<details class="settings-card"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span><span class="settings-heading"><b>Notification Settings</b><small>Manage app notifications</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="row"><div><b>App notifications</b><p class="muted" style="margin:4px 0 0">Allow Daily Khata Book to show notifications on this device.</p></div><span id="notificationPermissionStatus" class="pill">Checking…</span></div><div class="actions"><button type="button" id="enableAppNotifications">Enable notifications</button></div><p class="muted" id="notificationPermissionNote">Notification availability depends on your device and browser settings.</p></div></details>
+<details class="settings-card"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span><span class="settings-heading"><b>Notification Settings</b><small>Manage app notifications</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="row"><div><b>Document reminder notifications</b><p class="muted" style="margin:4px 0 0">Turn reminders on or off for this app.</p></div><label class="interest-switch" aria-label="Enable document reminder notifications"><input type="checkbox" id="appNotificationsToggle" checked><span class="interest-switch-track"></span></label></div><div class="row" style="margin-top:10px"><span class="muted">Android permission</span><span id="notificationPermissionStatus" class="pill">Checking…</span></div><p class="muted" id="notificationPermissionNote">When enabled, document reminders can appear in Android notifications.</p></div></details>
 
 <details class="settings-card"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M5.5 7.5h13M5.5 16.5h13"/></svg></span><span class="settings-heading"><b>Language</b><small>App language preference</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="field"><label>App language</label><select id="settingsLanguage"><option value="en">English</option><option value="te">తెలుగు</option><option value="ta">தமிழ்</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="kok">कोंकणी</option><option value="hi">हिन्दी</option></select></div><div class="actions"><button id="saveLanguage">Save language</button></div><p class="muted">Select a language and tap Save language to apply it across the app. Your choice is saved on this device.</p></div></details>
 
@@ -195,7 +195,7 @@ function renderReminderDot(){const items=activeDocReminders(),seen=state.profile
 function renderDocuments(){const host=$('shopDocuments');if(!host)return;host.innerHTML='';(state.profile.documents||[]).forEach(doc=>{const card=document.createElement('div');card.className='doc-card';const title=document.createElement('h3');title.textContent=doc.label||doc.name||'Document';const number=document.createElement('p');number.className='muted';number.textContent='Document Number: '+(doc.number||'Not entered');const expiry=document.createElement('p');expiry.className='muted';expiry.textContent='Expiry Date: '+(doc.expiry?fmtDate(doc.expiry):'Not entered');card.append(title,number,expiry);if(doc.expiry){const st=document.createElement('p');const status=docStatus(doc);st.className='doc-status '+status.kind;st.textContent=status.label;card.append(st)}if(doc.fileData){if(doc.fileType?.startsWith('image/')){const img=document.createElement('img');img.className='doc-preview';img.src=doc.fileData;img.alt=doc.label+' preview';card.append(img)}else{const link=document.createElement('a');link.href=doc.fileData;link.target='_blank';link.rel='noopener';link.textContent='View uploaded document: '+(doc.fileName||'PDF');card.append(link)}}const actions=document.createElement('div');actions.className='actions';const edit=document.createElement('button');edit.type='button';edit.className='secondary small';edit.textContent='Edit';edit.onclick=()=>{ $('newDocName').value=doc.label||'';$('newDocNumber').value=doc.number||'';$('newDocExpiry').value=doc.expiry||'';$('newDocFile').value='';$('shopDocumentForm').dataset.editId=doc.id;$('shopDocumentForm').classList.remove('hidden');$('shopDocumentForm').scrollIntoView({behavior:'smooth',block:'center'});};const remove=document.createElement('button');remove.type='button';remove.className='danger small';remove.textContent='Delete';remove.onclick=()=>{if(confirm('Delete '+(doc.label||'this document')+' and its uploaded file?')){state.profile.documents=state.profile.documents.filter(x=>x.id!==doc.id);state.profile.reminderSeen=(state.profile.reminderSeen||[]).filter(x=>!x.startsWith(doc.id+':'));save();renderDocuments();renderReminderList();renderReminderDot();scheduleDocumentReminders()}};actions.append(edit,remove);card.append(actions);host.append(card)});}
 function readFileData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(file)})}
 function renderReminderList(){const host=$('documentReminders');if(!host)return;host.innerHTML='';const docs=activeDocReminders().sort((a,b)=>(a.expiry||'').localeCompare(b.expiry||''));if(!docs.length){host.innerHTML='<p class="muted">No upcoming or expired document renewals.</p>';renderReminderDot();return}docs.forEach(doc=>{const card=document.createElement('div');card.className='doc-card';const title=document.createElement('h3');title.textContent=doc.label;const date=document.createElement('p');date.className='muted';date.textContent='Renewal / Expiry: '+fmtDate(doc.expiry);const status=document.createElement('p');status.className='doc-status '+doc.status.kind;status.textContent=doc.status.label;const open=document.createElement('button');open.type='button';open.className='secondary small';open.textContent='View Document';open.onclick=()=>{document.querySelector('[data-tab="settings"]')?.click();setTimeout(()=>{const d=[...document.querySelectorAll('#shopDocuments .doc-card')].find(x=>x.querySelector('h3')?.textContent===doc.label);d?.scrollIntoView({behavior:'smooth',block:'center'});d?.querySelector('input[type=file]')?.focus({preventScroll:true})},100)};card.append(title,date,status,open);host.append(card);});save();renderReminderDot();}
-async function scheduleDocumentReminders(){const api=window.NativeReminders;if(!api)return;try{await api.sync((state.profile.documents||[]).filter(d=>d.expiry).map(d=>({id:d.id,label:d.label,expiry:d.expiry})));}catch(e){console.warn('Document notification scheduling failed',e);}}
+async function scheduleDocumentReminders(){const api=window.NativeReminders;if(!api)return;try{if(state.profile.notificationsEnabled===false){await api.cancel();return;}await api.sync((state.profile.documents||[]).filter(d=>d.expiry).map(d=>({id:d.id,label:d.label,expiry:d.expiry})));}catch(e){console.warn('Document notification scheduling failed',e);}}
 function initShopDocuments(){state.profile.documents=Array.isArray(state.profile.documents)?state.profile.documents:[];state.profile.reminderSeen=Array.isArray(state.profile.reminderSeen)?state.profile.reminderSeen:[];const legacyTypes=['shop-registration','labour-license','fssai','gst'];state.profile.documents=state.profile.documents.filter(d=>!(legacyTypes.includes(d.type)&&!d.number&&!d.expiry&&!d.fileData));const photo=$('shopPhotoPreview'),placeholder=$('shopPhotoPlaceholder'),caption=$('shopPhotoCaption'),remove=$('removeShopPhoto');if(photo){photo.src=state.profile.photo||'';photo.style.display=state.profile.photo?'block':'none'}if(placeholder)placeholder.style.display=state.profile.photo?'none':'block';if(caption)caption.textContent=state.profile.photo?(lang==='te'?'ఫోటో మార్చడానికి నొక్కండి':'Tap to change photo'):(lang==='te'?'షాప్ ఫోటో జోడించడానికి నొక్కండి':'Tap to add shop photo');if(remove)remove.style.display=state.profile.photo?'inline-flex':'none';renderDocuments();renderReminderList();renderReminderDot();scheduleDocumentReminders();}
 function renderShopOverview(){
  const end=$('calcDate')?.value||todayISO();
@@ -370,36 +370,55 @@ $('authPrivacy').addEventListener('click',e=>{e.preventDefault();$('registerStat
 showPage('register');
 (async()=>{try{const user=await auth().getCurrentUser();if(user){const fresh=await auth().getCurrentUser();if(fresh?.emailVerified||fresh?.providerId==='google.com')enterApp(user);else await auth().signOut();}}catch(e){console.info('No existing Firebase session yet',e);}})();
 
-// Native Android notification permission controls (with browser fallback).
+// App-level notification switch controls scheduled document reminders.
 (function(){
  const status=document.getElementById('notificationPermissionStatus');
- const button=document.getElementById('enableAppNotifications');
+ const toggle=document.getElementById('appNotificationsToggle');
  const note=document.getElementById('notificationPermissionNote');
- if(!status||!button||!note)return;
+ if(!status||!toggle||!note)return;
  const native=!!(window.Capacitor?.isNativePlatform?.()&&window.NativeReminders);
- async function refresh(){
-  let p='prompt';
-  try{
-   if(native){const result=await window.NativeReminders.checkPermission();p=result.display||'prompt';}
-   else if('Notification' in window)p=Notification.permission;
-   else {status.textContent='Not supported';button.disabled=true;note.textContent='Notifications are not supported by this app environment.';return;}
-  }catch(e){status.textContent='Unavailable';button.disabled=false;note.textContent='Could not read notification permission. Try enabling it again.';return;}
-  status.textContent=p==='granted'?'Enabled':p==='denied'?'Blocked':'Not enabled';
-  button.textContent=p==='granted'?'Notifications enabled':p==='denied'?'Open device settings':'Enable notifications';
-  button.disabled=p==='granted';
-  if(p==='denied')note.textContent='Notifications are blocked. Allow them in Android Settings → Apps → Daily Khata Book → Notifications.';
-  else if(p==='granted')note.textContent='Permission enabled. Document renewal reminders can appear in Android notifications.';
-  else note.textContent='Tap Enable notifications and allow permission when Android asks.';
+ async function permission(){
+  if(native)return (await window.NativeReminders.checkPermission()).display||'prompt';
+  if('Notification' in window)return Notification.permission;
+  return 'unsupported';
  }
- button.addEventListener('click',async()=>{
+ async function refresh(){
   try{
-   let p;
-   if(native)p=(await window.NativeReminders.requestPermission()).display;
-   else if('Notification' in window)p=await Notification.requestPermission();
-   else {await refresh();return;}
-   await refresh();
-   if(p==='granted'&&native)await window.dispatchEvent(new Event('native-reminder-permission-granted'));
-  }catch(e){note.textContent='Could not enable notifications. Check Android app notification settings.';await refresh();}
+   const p=await permission();
+   status.textContent=p==='granted'?'Allowed':p==='denied'?'Blocked':p==='unsupported'?'Not supported':'Not enabled';
+   if(p==='denied')note.textContent='Android permission is blocked. Allow it in Android Settings → Apps → Daily Khata Book → Notifications.';
+   else if(p==='granted')note.textContent='App setting controls whether document reminders are scheduled.';
+   else if(p==='unsupported')note.textContent='Notifications are not supported in this environment.';
+   else note.textContent='Turn on the switch and allow notification permission when Android asks.';
+  }catch(e){status.textContent='Unavailable';note.textContent='Could not check Android notification permission.';}
+ }
+ toggle.checked=state.profile.notificationsEnabled!==false;
+ toggle.addEventListener('change',async()=>{
+  const enabled=toggle.checked;
+  state.profile.notificationsEnabled=enabled;save();
+  if(!enabled){
+   try{if(native)await window.NativeReminders.cancel();}catch(e){console.warn('Could not cancel reminders',e);}
+   note.textContent='Notifications are off. No scheduled document reminders will be sent.';
+   await refresh();return;
+  }
+  try{
+   let p=await permission();
+   if(p==='prompt'){
+    if(native)p=(await window.NativeReminders.requestPermission()).display;
+    else if('Notification' in window)p=await Notification.requestPermission();
+   }
+   if(p!=='granted'){
+    toggle.checked=false;state.profile.notificationsEnabled=false;save();
+    note.textContent='Notifications could not be enabled. Allow them in Android app settings, then try again.';
+    await refresh();return;
+   }
+   if(native)await scheduleDocumentReminders();
+   note.textContent='Notifications are on. Document renewal reminders are scheduled.';
+  }catch(e){
+   toggle.checked=false;state.profile.notificationsEnabled=false;save();
+   note.textContent='Could not enable notifications. Check Android app notification settings.';
+  }
+  await refresh();
  });
  refresh();
 })();
