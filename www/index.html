@@ -30,57 +30,51 @@ body.auth-active .bottom-nav,body.auth-active>header,body.auth-active>main{displ
 .auth-forgot{text-align:right;margin:-10px 2px 14px}.auth-link{padding:5px 2px;background:transparent;color:#6d35b5;text-decoration:underline;font-weight:700;border-radius:6px}.auth-status{font-size:13px;line-height:1.5;color:#6d35b5;min-height:18px;margin:12px 2px 0}
 @media(max-width:380px){.auth-card{padding:25px 18px 20px;border-radius:24px}.auth-subtitle{font-size:14px}.auth-input-wrap{min-height:56px}.auth-btn{min-height:56px;font-size:15px}}
 .tx-description-row{display:flex;align-items:center;gap:7px}.tx-description-row input{flex:1;min-width:0}.tx-attach-btn{width:46px;min-width:46px;height:44px;padding:0;font-size:20px}.tx-attachments-meta{font-size:11px;color:var(--deep);margin-top:5px}.stored-file-row{padding:10px 0;border-bottom:1px solid var(--line)}.stored-file-name{font-size:13px;font-weight:750;overflow-wrap:anywhere}.stored-file-meta{font-size:11px;color:var(--muted);margin-top:3px}.stored-file-row .actions{margin-top:7px}
-/* Design 6 navigation: white floating dock with a moving raised purple active button */
+/* Daily Khata Book navigation: compact capsule, level-aligned icons */
 .bottom-nav{
- position:fixed;left:12px;right:12px;bottom:calc(9px + env(safe-area-inset-bottom,0px));z-index:40;
- display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;gap:3px;
- padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px));
- background:linear-gradient(180deg,#ffffff 0%,#fbf9ff 100%);
- border:1px solid #e9e0f3;border-radius:26px;
- box-shadow:0 9px 24px #32134b20,0 1px 0 #ffffff inset;overflow:visible;min-height:80px
+ position:fixed;left:12px;right:12px;bottom:calc(7px + env(safe-area-inset-bottom,0px));z-index:40;
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start;gap:0;
+ height:70px;padding:0 7px;background:transparent;border:0;border-radius:0;
+ box-shadow:none;overflow:visible;
+}
+.bottom-nav::before{
+ content:"";position:absolute;left:0;right:0;top:0;height:52px;z-index:-1;
+ background:#fff;border:1px solid #e9e0f3;border-radius:20px;
+ box-shadow:0 7px 20px #32134b1c,0 1px 0 #fff inset;
 }
 .bottom-nav .tab{
- position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
- min-width:0;min-height:68px;padding:5px 2px;background:transparent;color:#777080;
- border:0;border-radius:18px;font-size:11px;font-weight:700;line-height:1.15;
- box-shadow:none;white-space:normal;transition:color .2s ease,transform .2s ease
+ position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+ min-width:0;height:70px;padding:0 1px;background:transparent;color:#777080;
+ border:0;border-radius:12px;font-size:10px;font-weight:700;line-height:12px;
+ box-shadow:none;white-space:nowrap;transform:none;transition:color .18s ease;
 }
 .bottom-nav .tab .nav-icon{
- display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;
- background:transparent;color:#777080;box-shadow:none;transform:translateY(0);
- transition:background .22s ease,box-shadow .22s ease,transform .22s ease,color .22s ease
+ position:absolute;top:4px;left:50%;transform:translateX(-50%);
+ display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;
+ background:transparent;color:#777080;box-shadow:none;transition:background .18s ease,color .18s ease;
 }
-.bottom-nav .nav-icon svg{display:block;width:26px;height:26px;filter:none;stroke-width:2.1}
-.bottom-nav .tab.active{color:#6725a7;background:transparent;transform:translateY(-5px);box-shadow:none}
-.bottom-nav .tab.active .nav-icon{
- width:48px;height:48px;margin-top:-9px;margin-bottom:0;
- background:linear-gradient(145deg,#bd70ff 0%,#8a35db 48%,#6420b4 100%);
- color:#fff;border:3px solid #e9d7ff;
- box-shadow:0 6px 16px #8b35dc70,0 0 0 4px #6d35b512,inset 0 2px 4px #ffffff55;
- transform:translateY(-1px)
-}
-.bottom-nav .tab.active .nav-icon svg{width:26px;height:26px}
-.bottom-nav .tab[data-tab="transactions"]{color:#6725a7;min-height:70px;margin-top:-7px;z-index:2}
+.bottom-nav .nav-icon svg{display:block;width:25px;height:25px;stroke-width:2}
+.bottom-nav .tab>span:last-child{position:absolute;top:54px;left:0;right:0;text-align:center;color:#6d6475;font-size:10px;font-weight:650;line-height:12px}
+.bottom-nav .tab.active{color:#6725a7;background:transparent;transform:none;box-shadow:none}
+.bottom-nav .tab.active .nav-icon{width:44px;height:44px;margin:0;background:#f0e5ff;color:#6725a7;border:1px solid #dfc8fb;box-shadow:inset 0 1px 2px #fff;transform:translateX(-50%)}
+.bottom-nav .tab.active .nav-icon svg{width:25px;height:25px}
+.bottom-nav .tab.active>span:last-child{color:#6725a7;font-weight:800}
 .bottom-nav .tab[data-tab="transactions"] .nav-icon{
- width:56px;height:56px;margin-top:-8px;border:3px solid #f0e2ff;border-radius:50%;
- background:linear-gradient(145deg,#bd70ff 0%,#8a35db 48%,#6420b4 100%);
- color:#fff;box-shadow:0 7px 18px #8b35dc80,inset 0 2px 4px #ffffff66;
- transform:translateY(-5px)
+ top:2px;width:48px;height:48px;border:0;border-radius:50%;
+ background:linear-gradient(145deg,#9a4be0 0%,#6d35b5 100%);color:#fff;
+ box-shadow:0 4px 10px #6d35b540,inset 0 1px 2px #ffffff55;transform:translateX(-50%);
 }
-.bottom-nav .tab[data-tab="transactions"] .nav-icon svg{width:28px;height:28px;stroke-width:2.5}
-.bottom-nav .tab[data-tab="transactions"] span:last-child{color:#6725a7;font-size:10px;font-weight:800}
-.bottom-nav .tab[data-tab="transactions"].active{transform:translateY(-7px)}
-.bottom-nav .tab[data-tab="transactions"].active .nav-icon{box-shadow:0 8px 20px #9b4bec99,0 0 0 4px #6d35b518,inset 0 2px 4px #ffffff66}
-.bottom-nav .tab:focus-visible{outline:2px solid #8a35db;outline-offset:2px}
-body{padding-bottom:calc(106px + env(safe-area-inset-bottom,0px))}
+.bottom-nav .tab[data-tab="transactions"] .nav-icon svg{width:25px;height:25px;stroke-width:2.5}
+.bottom-nav .tab[data-tab="transactions"]>span:last-child{color:#6725a7;font-weight:800}
+.bottom-nav .tab[data-tab="transactions"].active{transform:none}
+.bottom-nav .tab[data-tab="transactions"].active .nav-icon{width:48px;height:48px;transform:translateX(-50%)}
+.bottom-nav .tab:focus-visible{outline:2px solid #8a35db;outline-offset:1px}
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 @media(max-width:390px){
- .bottom-nav{left:8px;right:8px;min-height:78px;padding:6px 5px calc(6px + env(safe-area-inset-bottom,0px));border-radius:23px}
- .bottom-nav .tab{font-size:10px;gap:3px;min-height:60px}
- .bottom-nav .tab .nav-icon{width:36px;height:36px}
- .bottom-nav .nav-icon svg{width:24px;height:24px}
- .bottom-nav .tab.active .nav-icon{width:46px;height:46px}
- .bottom-nav .tab[data-tab="transactions"] .nav-icon{width:52px;height:52px}
- .bottom-nav .tab[data-tab="transactions"] span:last-child{font-size:9px}
+ .bottom-nav{left:8px;right:8px;padding-left:4px;padding-right:4px}
+ .bottom-nav .tab>span:last-child{font-size:9px}
+ .bottom-nav .tab .nav-icon{width:44px;height:44px}
+ .bottom-nav .tab[data-tab="transactions"] .nav-icon{width:48px;height:48px}
 }
 </style></head><body class="auth-active">
 
