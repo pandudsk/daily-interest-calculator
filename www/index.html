@@ -144,6 +144,23 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   .bottom-nav .tab>span:last-child{font-size:9px!important}
 }
 
+
+/* Keep the Entries action in its existing purple-and-white style */
+.bottom-nav .tab[data-tab="transactions"] .nav-icon,
+.bottom-nav .tab[data-tab="transactions"].active .nav-icon{
+  background:linear-gradient(145deg,#9a4be0 0%,#6d35b5 100%)!important;
+  color:#fff!important;border-color:transparent!important;
+  box-shadow:0 4px 10px #6d35b540,inset 0 1px 2px #ffffff55!important;
+}
+.bottom-nav .tab[data-tab="transactions"] .nav-icon svg,
+.bottom-nav .tab[data-tab="transactions"].active .nav-icon svg{
+  color:#fff!important;
+}
+.bottom-nav .tab[data-tab="transactions"]>span:last-child,
+.bottom-nav .tab[data-tab="transactions"].active>span:last-child{
+  color:#6725a7!important;font-weight:800!important;
+}
+
 </style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
