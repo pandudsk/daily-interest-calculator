@@ -161,6 +161,29 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   color:#6725a7!important;font-weight:800!important;
 }
 
+
+
+/* Fix capsule placement: span the full navigation row and center it on screen */
+.bottom-nav{
+  position:fixed!important;
+  left:12px!important;right:12px!important;
+  width:calc(100% - 24px)!important;
+  max-width:none!important;
+  margin:0!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  background:#fff!important;
+  border:1px solid #e9e0f3!important;
+  border-radius:22px!important;
+}
+@media(max-width:390px){
+  .bottom-nav{
+    left:8px!important;right:8px!important;
+    width:calc(100% - 16px)!important;
+  }
+}
 </style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
