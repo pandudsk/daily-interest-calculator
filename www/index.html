@@ -316,6 +316,15 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 .bottom-nav .tab[data-tab="transactions"].active>span:last-child{
   font-size:14px!important;line-height:14px!important;
 }
+
+/* Keep every navigation label visually equal in weight and size */
+.bottom-nav .tab>span:last-child,
+.bottom-nav .tab.active>span:last-child,
+.bottom-nav .tab[data-tab="transactions"]>span:last-child,
+.bottom-nav .tab[data-tab="transactions"].active>span:last-child{
+  font-size:14px!important;line-height:14px!important;
+  font-weight:700!important;
+}
 </style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
