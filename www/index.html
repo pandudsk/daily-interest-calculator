@@ -302,6 +302,20 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   width:100%!important;text-align:center!important;
   color:#6725a7!important;font-weight:800!important;
 }
+
+/* Trial sizing: 26px SVG icons and 14px navigation labels */
+.bottom-nav .tab{gap:0!important}
+.bottom-nav .tab .nav-icon svg,
+.bottom-nav .tab.active .nav-icon svg,
+.bottom-nav .tab[data-tab="transactions"] .nav-icon svg,
+.bottom-nav .tab[data-tab="transactions"].active .nav-icon svg{
+  width:26px!important;height:26px!important;
+}
+.bottom-nav .tab>span:last-child,
+.bottom-nav .tab[data-tab="transactions"]>span:last-child,
+.bottom-nav .tab[data-tab="transactions"].active>span:last-child{
+  font-size:14px!important;line-height:14px!important;
+}
 </style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
