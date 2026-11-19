@@ -256,6 +256,18 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
  .bottom-nav>.tab>span:last-child{font-size:9px!important}
 }
 
+/* Keep Customers icon and label exactly matched to Dashboard sizing */
+.bottom-nav>.tab[data-tab="customers"]>.nav-icon{
+  flex:0 0 46px!important;width:46px!important;height:46px!important;
+  min-width:46px!important;min-height:46px!important;
+}
+.bottom-nav>.tab[data-tab="customers"]>.nav-icon svg{
+  display:block!important;width:24px!important;height:24px!important;
+}
+.bottom-nav>.tab[data-tab="customers"]>span:last-child{
+  width:100%!important;font-size:10px!important;line-height:12px!important;
+  text-align:center!important;
+}
 /* Selected tab highlight covers both icon and label as one aligned capsule */
 .bottom-nav>.tab.active{
   height:60px!important;min-height:60px!important;
