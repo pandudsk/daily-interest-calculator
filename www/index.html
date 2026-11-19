@@ -325,6 +325,42 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   font-size:14px!important;line-height:14px!important;
   font-weight:700!important;
 }
+
+/* Final fix: navigation icon and label dimensions stay identical in every state */
+.bottom-nav > .tab,
+.bottom-nav > .tab.active,
+.bottom-nav > .tab[data-tab="transactions"],
+.bottom-nav > .tab[data-tab="transactions"].active{
+  transform:none!important;
+  font-size:14px!important;
+  font-weight:700!important;
+}
+.bottom-nav > .tab > .nav-icon,
+.bottom-nav > .tab.active > .nav-icon{
+  flex:0 0 46px!important;
+  width:46px!important;height:46px!important;
+  min-width:46px!important;min-height:46px!important;
+}
+.bottom-nav > .tab > .nav-icon svg,
+.bottom-nav > .tab.active > .nav-icon svg,
+.bottom-nav > .tab[data-tab="transactions"] > .nav-icon svg,
+.bottom-nav > .tab[data-tab="transactions"].active > .nav-icon svg{
+  display:block!important;
+  width:26px!important;height:26px!important;
+}
+.bottom-nav > .tab > span:last-child,
+.bottom-nav > .tab.active > span:last-child,
+.bottom-nav > .tab[data-tab="transactions"] > span:last-child,
+.bottom-nav > .tab[data-tab="transactions"].active > span:last-child{
+  display:block!important;
+  width:100%!important;height:14px!important;
+  margin:0!important;padding:0!important;
+  font-size:14px!important;line-height:14px!important;
+  font-weight:700!important;
+  text-align:center!important;
+  transform:none!important;
+}
+
 </style></head><body class="auth-active">
 
 <div id="authGate" class="auth-gate">
