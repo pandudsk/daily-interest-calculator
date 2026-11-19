@@ -326,8 +326,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   font-weight:700!important;
 }
 
-
-/* Customers tab only: keep its icon and label the same size when selected or unselected */
+/* Customers tab only: match the normal icon and label dimensions in both states */
 .bottom-nav > .tab[data-tab="customers"] > .nav-icon,
 .bottom-nav > .tab[data-tab="customers"].active > .nav-icon{
   flex:0 0 46px!important;width:46px!important;height:46px!important;
@@ -335,13 +334,14 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 }
 .bottom-nav > .tab[data-tab="customers"] > .nav-icon svg,
 .bottom-nav > .tab[data-tab="customers"].active > .nav-icon svg{
-  display:block!important;width:26px!important;height:26px!important;
+  width:26px!important;height:26px!important;
 }
 .bottom-nav > .tab[data-tab="customers"] > span:last-child,
 .bottom-nav > .tab[data-tab="customers"].active > span:last-child{
-  width:100%!important;height:14px!important;margin:0!important;padding:0!important;
-  font-size:14px!important;line-height:14px!important;font-weight:700!important;
-  text-align:center!important;transform:none!important;
+  width:100%!important;height:14px!important;
+  margin:0!important;padding:0!important;
+  font-size:14px!important;line-height:14px!important;
+  font-weight:700!important;text-align:center!important;
 }
 
 </style></head><body class="auth-active">
