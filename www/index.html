@@ -268,6 +268,19 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
   width:100%!important;font-size:10px!important;line-height:12px!important;
   text-align:center!important;
 }
+/* Add Transactions never gets the selected highlight box */
+.bottom-nav>.tab[data-tab="transactions"].active{
+  background:transparent!important;border-color:transparent!important;
+  box-shadow:none!important;border-radius:12px!important;
+}
+.bottom-nav>.tab[data-tab="transactions"].active>.nav-icon{
+  background:linear-gradient(145deg,#9a4be0 0%,#6d35b5 100%)!important;
+  border-color:transparent!important;border-radius:50%!important;
+  box-shadow:0 4px 10px #6d35b540,inset 0 1px 2px #ffffff55!important;
+}
+.bottom-nav>.tab[data-tab="transactions"].active>span:last-child{
+  color:#6725a7!important;font-weight:800!important;
+}
 /* Selected tab highlight covers both icon and label as one aligned capsule */
 .bottom-nav>.tab.active{
   height:60px!important;min-height:60px!important;
