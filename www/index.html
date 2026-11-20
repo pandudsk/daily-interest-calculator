@@ -425,6 +425,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 <section id="reports" class="hidden"><div class="card"><h2>Customer Reports</h2><p class="muted">Select a customer to view their separate ledger summary and statement.</p><div id="reportCards" class="report-grid"></div><div id="reportDetail" class="report-detail hidden"></div></div></section>
 <section id="reminders" class="hidden"><div class="card"><h2>🔔 Document Renewal Reminders</h2><p class="muted">Shop Profile documents · 30 days, 7 days and expiry-day alerts</p><div id="documentReminders"><p class="muted">No document renewal reminders yet. Add document expiry dates in Settings → Shop Profile.</p></div></div></section>
 <section id="settings" class="hidden">
+<details class="settings-card" id="daysCalculatorCard"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18M8 13h3M8 17h7"/></svg></span><span class="settings-heading"><b>Days Calculator</b><small>Calculate days, weeks, months and years between dates</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="field"><label for="daysFromDate">From Date</label><input type="date" id="daysFromDate"></div><div class="field"><label for="daysToDate">To Date</label><input type="date" id="daysToDate"></div><div class="grid" style="margin-top:12px"><div class="field"><label>Days</label><input id="daysResult" readonly placeholder="—"></div><div class="field"><label>Weeks</label><input id="weeksResult" readonly placeholder="—"></div><div class="field"><label>Months</label><input id="monthsResult" readonly placeholder="—"></div><div class="field"><label>Years</label><input id="yearsResult" readonly placeholder="—"></div></div><p class="muted" id="daysCalculatorNote">Enter both dates to calculate the duration. The start date is not counted; the end date is included as elapsed time.</p><div class="actions"><button type="button" class="secondary" id="clearDaysCalculator">Clear</button></div></div></details>
 <details class="settings-card"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span><span class="settings-heading"><b>Notification Settings</b><small>Manage app notifications</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="row"><div><b>Document reminder notifications</b><p class="muted" style="margin:4px 0 0">Turn reminders on or off for this app.</p></div><label class="interest-switch" aria-label="Enable document reminder notifications"><input type="checkbox" id="appNotificationsToggle" checked><span class="interest-switch-track"></span></label></div><div class="row" style="margin-top:10px"><span class="muted">Android permission</span><span id="notificationPermissionStatus" class="pill">Checking…</span></div><p class="muted" id="notificationPermissionNote">When enabled, document reminders can appear in Android notifications.</p></div></details>
 
 <details class="settings-card"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg></span><span class="settings-heading"><b>App Lock &amp; Fingerprint</b><small>Protect Daily Khata Book with your phone security</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="row"><div><b>App Lock</b><p class="muted" style="margin:4px 0 0">Require fingerprint or device PIN / pattern when reopening the app.</p></div><label class="interest-switch" aria-label="Enable app lock"><input type="checkbox" id="appLockToggle"><span class="interest-switch-track"></span></label></div><div class="row" style="margin-top:10px"><span class="muted">Unlock method</span><span class="pill">Fingerprint + Device PIN</span></div><p class="muted" id="appLockStatus">Uses Android system authentication. Daily Khata Book never reads or stores your device PIN, pattern or fingerprint.</p></div></details>
@@ -644,6 +645,23 @@ function refreshLocalBackupStatus(){
  refresh();
  if(enabled())setTimeout(unlock,700);
 })();
+function calculateDaysDuration(){
+ const from=$('daysFromDate')?.value,to=$('daysToDate')?.value;
+ const fields=['daysResult','weeksResult','monthsResult','yearsResult'];
+ if(!from||!to){fields.forEach(id=>{if($(id))$(id).value=''});return}
+ const [fy,fm,fd]=from.split('-').map(Number),[ty,tm,td]=to.split('-').map(Number);
+ const start=Date.UTC(fy,fm-1,fd),end=Date.UTC(ty,tm-1,td),diff=end-start;
+ if(diff<0){fields.forEach(id=>$(id).value='');$('daysCalculatorNote').textContent='To Date must be on or after From Date.';return}
+ const days=Math.round(diff/86400000);
+ $('daysResult').value=days.toLocaleString('en-IN');
+ $('weeksResult').value=(days/7).toFixed(2);
+ $('monthsResult').value=(days/30.436875).toFixed(2);
+ $('yearsResult').value=(days/365.2425).toFixed(2);
+ $('daysCalculatorNote').textContent='Weeks, months and years are shown as total duration equivalents.';
+}
+$('daysFromDate').addEventListener('change',calculateDaysDuration);
+$('daysToDate').addEventListener('change',calculateDaysDuration);
+$('clearDaysCalculator').onclick=()=>{$('daysFromDate').value='';$('daysToDate').value='';calculateDaysDuration();$('daysCalculatorNote').textContent='Enter both dates to calculate the duration.'};
 function save(){
  const json=JSON.stringify(state);localStorage.setItem('di_state',json);
  autoBackupQueue=autoBackupQueue.catch(()=>{}) .then(()=>runScheduledLocalBackup(false,true)).catch(e=>{console.error('Automatic backup failed',e);const note=$('localBackupNote');if(note)note.textContent='Automatic backup failed: '+(e?.message||'unknown error');const badge=$('localBackupBadge');if(badge){badge.textContent='Failed';badge.style.background='var(--redbg)';badge.style.color='var(--red)';}});
