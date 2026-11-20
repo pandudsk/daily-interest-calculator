@@ -655,9 +655,9 @@ function calculateDaysDuration(){
  const days=Math.round(diff/86400000);
  $('daysResult').value=days.toLocaleString('en-IN');
  $('weeksResult').value=(days/7).toFixed(2);
- $('monthsResult').value=(days/30.436875).toFixed(2);
- $('yearsResult').value=(days/365.2425).toFixed(2);
- $('daysCalculatorNote').textContent='Weeks, months and years are shown as total duration equivalents.';
+ $('yearsResult').value=(days/365).toFixed(2);
+ $('monthsResult').value=(days/365*12).toFixed(2);
+ $('daysCalculatorNote').textContent='Weeks use 7 days, months use 12 months per 365-day year, and years use 365 days.';
 }
 $('daysFromDate').addEventListener('change',calculateDaysDuration);
 $('daysToDate').addEventListener('change',calculateDaysDuration);
