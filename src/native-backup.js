@@ -53,7 +53,7 @@ async function saveSafetyCopy(json, filename = AUTO_BACKUP) {
  return true;
 }
 
-async function readSafetyCopy() { return readRaw(AUTO_BACKUP); }
+async function readSafetyCopy() { const internal=await readRaw(AUTO_BACKUP); if(internal)return internal; if(Capacitor.isNativePlatform()&&NativeBackupDownloads?.readDownloadsBackup){try{const result=await NativeBackupDownloads.readDownloadsBackup();if(typeof result?.content==='string'&&result.content.length)return result.content;}catch(e){console.warn('Downloads backup recovery unavailable',e);} } return null; }
 
 async function getSafetyCopyInfo() {
  const raw=await readRaw(AUTO_BACKUP);
