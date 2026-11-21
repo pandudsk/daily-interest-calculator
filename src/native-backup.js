@@ -107,3 +107,6 @@ async function getSafetyCopyInfo() {
 }
 
 window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo};
+if(Capacitor.isNativePlatform() && NativeBackupDownloads?.ensureFolderStructure){
+ NativeBackupDownloads.ensureFolderStructure().then(result=>console.info('Daily Khata Book folders ready:',result?.path)).catch(error=>console.warn('Could not prepare shared folders:',error));
+}
