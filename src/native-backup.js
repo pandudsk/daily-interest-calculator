@@ -5,7 +5,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 const NativeBackupDownloads = registerPlugin('NativeBackupDownloads');
 window.NativeBackupDownloads = NativeBackupDownloads;
 const AUTO_BACKUP = 'automatic-backup.json';
-const PUBLIC_BACKUP_PATH = 'Download/Daily Khata Book/Backup/automatic-backup.json';
+const PUBLIC_BACKUP_PATH = 'Download/Daily Khata Book/Backup/Automatic/automatic-backup.json';
 
 async function shareBackup(json, filename) {
  if (!Capacitor.isNativePlatform()) throw new Error('Backup sharing is available only in the Android app.');
