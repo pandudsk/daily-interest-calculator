@@ -669,21 +669,42 @@ function calculateDaysDuration(){
 $('daysFromDate').addEventListener('change',calculateDaysDuration);
 $('daysToDate').addEventListener('change',calculateDaysDuration);
 $('clearDaysCalculator').onclick=()=>{$('daysFromDate').value='';$('daysToDate').value='';calculateDaysDuration();$('daysCalculatorNote').textContent='Enter both dates to calculate the duration.'};
+let customInterestMode='simple';
 function calculateCustomInterest(){
  const principal=Number($('customInterestPrincipal').value),rate=Number($('customInterestRate').value),from=$('customInterestFromDate').value,to=$('customInterestToDate').value;
  const daysOut=$('customInterestDays'),interestOut=$('customInterestAmount'),totalOut=$('customInterestTotal'),note=$('customInterestNote');
- if(!from||!to||!Number.isFinite(principal)||principal<=0||!Number.isFinite(rate)||rate<0){daysOut.value='';interestOut.value='';totalOut.value='';note.textContent='Enter a positive principal, a non-negative monthly rate, and both dates.';return}
- const [fy,fm,fd]=from.split('-').map(Number),[ty,tm,td]=to.split('-').map(Number);const days=Math.round((Date.UTC(ty,tm-1,td)-Date.UTC(fy,fm-1,fd))/86400000);
- if(days<0){daysOut.value='';interestOut.value='';totalOut.value='';note.textContent='To Date must be on or after From Date.';return}
- const months=days/365*12,monthlyRate=rate/100;const compound=$('customCompoundBtn').classList.contains('selected');
- const total=compound?principal*Math.pow(1+monthlyRate,months):principal*(1+monthlyRate*months);const interest=Math.max(0,total-principal);
- daysOut.value=days.toLocaleString('en-IN');interestOut.value=interest.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});totalOut.value=total.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
- note.textContent=(compound?'Compound interest':'Simple interest')+' · '+months.toFixed(2)+' months · Rate ₹'+rate.toFixed(2)+' per ₹100 per month. This result does not change customer accounts.';
+ const clearResults=()=>{daysOut.value='';interestOut.value='';totalOut.value='';};
+ if(!from||!to){clearResults();note.textContent='Enter both From Date and To Date.';return;}
+ if(!Number.isFinite(principal)||principal<=0||!Number.isFinite(rate)||rate<0){clearResults();note.textContent='Enter a principal greater than zero and a valid monthly rate (zero or more).';return;}
+ const parseDate=value=>{const m=/^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(value);if(!m)return null;const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),t=Date.UTC(y,mo-1,d);const check=new Date(t);return check.getUTCFullYear()===y&&check.getUTCMonth()===mo-1&&check.getUTCDate()===d?t:null;};
+ const start=parseDate(from),end=parseDate(to);
+ if(start===null||end===null){clearResults();note.textContent='Please select valid dates.';return;}
+ const days=Math.round((end-start)/86400000);
+ if(days<0){clearResults();note.textContent='To Date must be on or after From Date.';return;}
+ const monthlyRate=rate/100,wholeMonths=Math.floor(days/30),remainingDays=days%30;
+ let total;
+ if(customInterestMode==='compound'){
+  total=principal*Math.pow(1+monthlyRate,wholeMonths)*(1+monthlyRate*remainingDays/30);
+ }else{
+  total=principal*(1+monthlyRate*days/30);
+ }
+ const interest=Math.max(0,total-principal),fmt=n=>n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+ daysOut.value=String(days);interestOut.value=fmt(interest);totalOut.value=fmt(total);
+ note.textContent=(customInterestMode==='compound'?'Compound interest':'Simple interest')+' · '+wholeMonths+' complete month(s) + '+remainingDays+' day(s) · Rate ₹'+rate.toFixed(2)+' per ₹100 per month. Remaining days are prorated on a 30-day month.';
 }
-['customInterestPrincipal','customInterestRate','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).addEventListener('input',calculateCustomInterest));
-$('customSimpleBtn').onclick=()=>{$('customSimpleBtn').classList.add('selected');$('customCompoundBtn').classList.remove('selected');calculateCustomInterest()};
-$('customCompoundBtn').onclick=()=>{$('customCompoundBtn').classList.add('selected');$('customSimpleBtn').classList.remove('selected');calculateCustomInterest()};
-$('clearCustomInterest').onclick=()=>{['customInterestPrincipal','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).value='');$('customInterestRate').value='1.50';$('customSimpleBtn').classList.add('selected');$('customCompoundBtn').classList.remove('selected');calculateCustomInterest();$('customInterestNote').textContent='Rate is entered as rupees per ₹100 per month. This calculator is separate from customer ledgers.'};
+['customInterestPrincipal','customInterestRate','customInterestFromDate','customInterestToDate'].forEach(id=>{const el=$(id);el.addEventListener('input',calculateCustomInterest);el.addEventListener('change',calculateCustomInterest);});
+function setCustomInterestMode(mode){
+ customInterestMode=mode;
+ $('customSimpleBtn').classList.toggle('selected',mode==='simple');
+ $('customCompoundBtn').classList.toggle('selected',mode==='compound');
+ $('customSimpleBtn').setAttribute('aria-pressed',String(mode==='simple'));
+ $('customCompoundBtn').setAttribute('aria-pressed',String(mode==='compound'));
+ calculateCustomInterest();
+}
+$('customSimpleBtn').onclick=()=>setCustomInterestMode('simple');
+$('customCompoundBtn').onclick=()=>setCustomInterestMode('compound');
+setCustomInterestMode('simple');
+$('clearCustomInterest').onclick=()=>{['customInterestPrincipal','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).value='');$('customInterestRate').value='1.50';setCustomInterestMode('simple');$('customInterestNote').textContent='Rate is entered as rupees per ₹100 per month. Simple: daily prorated. Compound: monthly compounding with remaining days prorated.'};
 function save(){
  const json=JSON.stringify(state);localStorage.setItem('di_state',json);
  autoBackupQueue=autoBackupQueue.catch(()=>{}) .then(()=>runScheduledLocalBackup(false,true)).catch(e=>{console.error('Automatic backup failed',e);const note=$('localBackupNote');if(note)note.textContent='Automatic backup failed: '+(e?.message||'unknown error');const badge=$('localBackupBadge');if(badge){badge.textContent='Failed';badge.style.background='var(--redbg)';badge.style.color='var(--red)';}});
