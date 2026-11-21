@@ -256,7 +256,7 @@ jobs:
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
                 String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                String[] args=new String[]{"automatic-backup.json",Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"};
+                String[] args=new String[]{"automatic-backup.json",Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/"};
                 Uri target=null;
                 try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
                   if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
