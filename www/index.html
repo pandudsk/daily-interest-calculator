@@ -669,11 +669,12 @@ function calculateDaysDuration(){
 $('daysFromDate').addEventListener('change',calculateDaysDuration);
 $('daysToDate').addEventListener('change',calculateDaysDuration);
 $('clearDaysCalculator').onclick=()=>{$('daysFromDate').value='';$('daysToDate').value='';calculateDaysDuration();$('daysCalculatorNote').textContent='Enter both dates to calculate the duration.'};
-let customInterestMode='simple';
+let customInterestMode=null;
 function calculateCustomInterest(){
  const principal=Number($('customInterestPrincipal').value),rate=Number($('customInterestRate').value),from=$('customInterestFromDate').value,to=$('customInterestToDate').value;
  const daysOut=$('customInterestDays'),interestOut=$('customInterestAmount'),totalOut=$('customInterestTotal'),note=$('customInterestNote');
  const clearResults=()=>{daysOut.value='';interestOut.value='';totalOut.value='';};
+ if(!customInterestMode){clearResults();note.textContent='Select Simple or Compound to calculate interest.';return;}
  if(!from||!to){clearResults();note.textContent='Enter both From Date and To Date.';return;}
  if(!Number.isFinite(principal)||principal<=0||!Number.isFinite(rate)||rate<0){clearResults();note.textContent='Enter a principal greater than zero and a valid monthly rate (zero or more).';return;}
  const parseDate=value=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(value);if(!m)return null;const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),t=Date.UTC(y,mo-1,d);const check=new Date(t);return check.getUTCFullYear()===y&&check.getUTCMonth()===mo-1&&check.getUTCDate()===d?t:null;};
@@ -703,8 +704,7 @@ function setCustomInterestMode(mode){
 }
 $('customSimpleBtn').onclick=()=>setCustomInterestMode('simple');
 $('customCompoundBtn').onclick=()=>setCustomInterestMode('compound');
-setCustomInterestMode('simple');
-$('clearCustomInterest').onclick=()=>{['customInterestPrincipal','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).value='');$('customInterestRate').value='1.50';setCustomInterestMode('simple');$('customInterestNote').textContent='Rate is entered as rupees per ₹100 per month. Simple: daily prorated. Compound: monthly compounding with remaining days prorated.'};
+$('clearCustomInterest').onclick=()=>{['customInterestPrincipal','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).value='');$('customInterestRate').value='1.50';customInterestMode=null;$('customSimpleBtn').classList.remove('selected');$('customCompoundBtn').classList.remove('selected');$('customSimpleBtn').setAttribute('aria-pressed','false');$('customCompoundBtn').setAttribute('aria-pressed','false');calculateCustomInterest();$('customInterestNote').textContent='Select Simple or Compound to calculate. Rate is rupees per ₹100 per month.'};
 function save(){
  const json=JSON.stringify(state);localStorage.setItem('di_state',json);
  autoBackupQueue=autoBackupQueue.catch(()=>{}) .then(()=>runScheduledLocalBackup(false,true)).catch(e=>{console.error('Automatic backup failed',e);const note=$('localBackupNote');if(note)note.textContent='Automatic backup failed: '+(e?.message||'unknown error');const badge=$('localBackupBadge');if(badge){badge.textContent='Failed';badge.style.background='var(--redbg)';badge.style.color='var(--red)';}});
