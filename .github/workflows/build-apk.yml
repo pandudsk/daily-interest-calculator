@@ -157,13 +157,41 @@ jobs:
           import java.io.OutputStream;
           @CapacitorPlugin(name="NativeBackupDownloads")
           public class NativeBackupDownloadsPlugin extends Plugin {
+            @PluginMethod public void ensureFolderStructure(PluginCall call) {
+              try {
+                android.content.ContentResolver resolver=getContext().getContentResolver();
+                String[] folders=new String[]{"Document","Backup","Gallery"};
+                for(String folder:folders){
+                  String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
+                  String marker=".folder";
+                  String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                  String[] args=new String[]{marker,relative+"/"};
+                  boolean exists=false;
+                  try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
+                    exists=cursor!=null&&cursor.moveToFirst();
+                  }
+                  if(!exists){
+                    ContentValues values=new ContentValues();
+                    values.put(MediaStore.MediaColumns.DISPLAY_NAME,marker);
+                    values.put(MediaStore.MediaColumns.MIME_TYPE,"application/octet-stream");
+                    values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
+                    values.put(MediaStore.MediaColumns.IS_PENDING,1);
+                    Uri uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+                    if(uri==null)throw new Exception("Could not create "+folder+" folder");
+                    try(OutputStream out=resolver.openOutputStream(uri)){if(out==null)throw new Exception("Could not initialize "+folder+" folder");out.write(new byte[0]);}
+                    ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);resolver.update(uri,done,null,null);
+                  }
+                }
+                JSObject result=new JSObject();result.put("created",true);result.put("path","Downloads/Daily Khata Book/{Document,Backup,Gallery}");call.resolve(result);
+              } catch(Exception e){call.reject("Could not create Daily Khata Book folders",e);}
+            }
             @PluginMethod public void saveToDownloads(PluginCall call) {
               String filename=call.getString("filename","automatic-backup.json");
               String content=call.getString("content");
               if(content==null){call.reject("Backup content is missing");return;}
               if(Build.VERSION.SDK_INT<29){call.reject("Public Downloads backup requires Android 10 or later");return;}
               try {
-                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book";
+                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup";
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
                 String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
@@ -187,7 +215,7 @@ jobs:
                 }
                 ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);
                 resolver.update(target,done,null,null);
-                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+filename);call.resolve(result);
+                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/Backup/"+filename);call.resolve(result);
               } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
             }
             @PluginMethod public void saveFile(PluginCall call) {
