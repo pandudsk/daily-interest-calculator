@@ -1,12 +1,13 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+
 const NativeBackupDownloads = registerPlugin('NativeBackupDownloads');
 window.NativeBackupDownloads = NativeBackupDownloads;
 const AUTO_BACKUP = 'automatic-backup.json';
 
 async function shareBackup(json, filename) {
- if (!Capacitor.isNativePlatform()) return false;
+ if (!Capacitor.isNativePlatform()) throw new Error('Backup sharing is available only in the Android app.');
  const result = await Filesystem.writeFile({path:filename,data:json,directory:Directory.Cache,encoding:'utf8',recursive:true});
  await Share.share({title:'Daily Khata Book Backup',text:'Keep this backup file safe. It contains your customers and transactions.',url:result.uri,dialogTitle:'Share backup'});
  return true;
@@ -17,6 +18,16 @@ function counts(data) {
  return {customers:customers.length,transactions:customers.reduce((n,c)=>n+(Array.isArray(c.transactions)?c.transactions.length:0),0)};
 }
 
+function validateBackup(raw) {
+ let data;
+ try { data = JSON.parse(raw); } catch (_) { throw new Error('Backup file is not valid JSON.'); }
+ if (!data || typeof data !== 'object' || !Array.isArray(data.customers) || !data.settings || typeof data.settings !== 'object') {
+  throw new Error('Backup structure is incomplete. The existing backup was not accepted.');
+ }
+ const c = counts(data);
+ return {data, ...c};
+}
+
 async function readRaw(path=AUTO_BACKUP) {
  if (!Capacitor.isNativePlatform()) return null;
  try {
@@ -25,43 +36,65 @@ async function readRaw(path=AUTO_BACKUP) {
  } catch (_) { return null; }
 }
 
+async function readDownloadsRaw() {
+ if (!Capacitor.isNativePlatform() || !NativeBackupDownloads?.readDownloadsBackup) return null;
+ try {
+  const result=await NativeBackupDownloads.readDownloadsBackup();
+  return typeof result?.content==='string' && result.content.length ? result.content : null;
+ } catch (_) { return null; }
+}
+
 async function saveSafetyCopy(json, filename = AUTO_BACKUP) {
- if (!Capacitor.isNativePlatform()) return false;
- const incoming=JSON.parse(json);
- const next=counts(incoming);
- // Never replace a known non-empty automatic backup with an empty state.
- if(filename===AUTO_BACKUP) {
-  const previousRaw=await readRaw(AUTO_BACKUP);
-  if(previousRaw) {
+ if (!Capacitor.isNativePlatform()) throw new Error('Local backup is available only in the Android app.');
+ const incoming=validateBackup(json);
+ if (filename===AUTO_BACKUP) {
+  const previousRaw=await readRaw(AUTO_BACKUP) || await readDownloadsRaw();
+  if (previousRaw) {
    try {
-    const previous=JSON.parse(previousRaw), before=counts(previous);
-    if(before.customers>0 && next.customers===0) {
-     throw new Error('Automatic backup protected: refusing to overwrite non-empty backup with empty data.');
+    const previous=validateBackup(previousRaw);
+    if (previous.customers>0 && incoming.customers===0) {
+     throw new Error('Backup protection: refusing to replace a backup containing customers with an empty backup.');
     }
    } catch(e) {
-    if(String(e?.message||'').includes('protected')) throw e;
+    if (String(e?.message||'').startsWith('Backup protection:')) throw e;
+    // An unreadable old copy is retained in Downloads if the internal copy is the one being replaced.
    }
   }
  }
  await Filesystem.writeFile({path:filename,data:json,directory:Directory.Data,encoding:'utf8',recursive:true});
- if(filename===AUTO_BACKUP) {
-  const publicCopy = await NativeBackupDownloads.saveToDownloads({filename:'automatic-backup.json', content:json});
-  window.__dailyKhataBackupDownloadUri = publicCopy?.uri || null;
-  const verified=await readRaw(AUTO_BACKUP);
-  if(!verified || verified!==json) throw new Error('Automatic backup verification failed after write.');
+ const internalVerified=await readRaw(filename);
+ if (internalVerified!==json) throw new Error('Local app-storage backup verification failed. The backup is not marked successful.');
+ if (filename===AUTO_BACKUP) {
+  const publicCopy=await NativeBackupDownloads.saveToDownloads({filename:'automatic-backup.json',content:json});
+  window.__dailyKhataBackupDownloadUri=publicCopy?.uri||null;
+  const downloadsVerified=await readDownloadsRaw();
+  if (downloadsVerified!==json) throw new Error('Phone Downloads backup could not be verified. The app-storage copy was saved, but the two-copy backup is incomplete.');
  }
- return true;
+ return {success:true,customers:incoming.customers,transactions:incoming.transactions,verified:true};
 }
 
-async function readSafetyCopy() { const internal=await readRaw(AUTO_BACKUP); if(internal)return internal; if(Capacitor.isNativePlatform()&&NativeBackupDownloads?.readDownloadsBackup){try{const result=await NativeBackupDownloads.readDownloadsBackup();if(typeof result?.content==='string'&&result.content.length)return result.content;}catch(e){console.warn('Downloads backup recovery unavailable',e);} } return null; }
+async function readSafetyCopy() {
+ const internal=await readRaw(AUTO_BACKUP);
+ if (internal) {
+  try { validateBackup(internal); return internal; } catch (_) { /* Try the independent Downloads copy. */ }
+ }
+ const downloads=await readDownloadsRaw();
+ if (downloads) { validateBackup(downloads); return downloads; }
+ return null;
+}
 
 async function getSafetyCopyInfo() {
- const raw=await readRaw(AUTO_BACKUP);
- if(!raw) return {available:false,verified:false,customers:0,transactions:0,exportedAt:null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
+ let raw=await readRaw(AUTO_BACKUP);
+ let source='App storage';
+ try { if(raw) validateBackup(raw); else throw new Error('missing'); }
+ catch (_) { raw=await readDownloadsRaw(); source='Downloads'; }
+ if(!raw) return {available:false,verified:false,customers:0,transactions:0,exportedAt:null,source:null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
  try {
-  const data=JSON.parse(raw), c=counts(data);
-  return {available:true,verified:Array.isArray(data.customers)&&!!data.settings,customers:c.customers,transactions:c.transactions,exportedAt:data.exportedAt||null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
- } catch (_) { return {available:true,verified:false,customers:0,transactions:0,exportedAt:null}; }
+  const result=validateBackup(raw);
+  return {available:true,verified:true,customers:result.customers,transactions:result.transactions,exportedAt:result.data.exportedAt||null,source,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
+ } catch (_) {
+  return {available:true,verified:false,customers:0,transactions:0,exportedAt:null,source,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
+ }
 }
 
 window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo};
