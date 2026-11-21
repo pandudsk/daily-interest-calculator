@@ -571,7 +571,7 @@ function refreshLocalBackupStatus(){
   $('localBackupTime').textContent=info.exportedAt?new Date(info.exportedAt).toLocaleString():'No backup found';
   $('localBackupCustomers').textContent=String(info.customers);
   $('localBackupTransactions').textContent=String(info.transactions);
-  $('localBackupNote').textContent=info.verified?'Backup file read successfully and its structure is valid.':'No valid automatic backup is available yet.';
+  $('localBackupNote').textContent=info.downloadsVerified?'Physical Downloads backup read and verified successfully.':(info.internalVerified?'App-storage copy exists, but the physical File Manager backup is missing or could not be verified.':'No valid backup file was found in app storage or Downloads.');
  }).catch(e=>{console.error('Backup status check failed',e);badge.textContent='Check failed';$('localBackupNote').textContent='Could not verify the automatic backup.';});
 }
 
