@@ -295,7 +295,7 @@ jobs:
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
                 String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                String[] args=new String[]{"automatic-backup.json",Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"};
+                String[] args=new String[]{"automatic-backup.json",Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic/"};
                 Uri target=null;
                 try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
                   if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
@@ -639,8 +639,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 41', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.40"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 42', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.41"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -651,7 +651,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.40", code: 41 };
+          window.APP_VERSION = { name: "1.41", code: 42 };
           EOF
           npx cap copy android
 
@@ -818,14 +818,14 @@ jobs:
           test -s android/app/build/outputs/apk/release/app-release.apk
           test -s android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p dist/store-release
-          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.40-41-release.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.40-41-release.aab
+          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.41-42-release.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.41-42-release.aab
           sha256sum dist/store-release/* > dist/store-release/SHA256SUMS.txt
-          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.40\\nVersion code: 41\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
+          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.41\\nVersion code: 42\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
 
       - name: Upload Store Release Package Set
         uses: actions/upload-artifact@v4
         with:
-          name: daily-khata-book-store-release-v1.40-build41
+          name: daily-khata-book-store-release-v1.41-build42
           path: dist/store-release/*
           if-no-files-found: error
