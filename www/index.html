@@ -676,7 +676,7 @@ function calculateCustomInterest(){
  const clearResults=()=>{daysOut.value='';interestOut.value='';totalOut.value='';};
  if(!from||!to){clearResults();note.textContent='Enter both From Date and To Date.';return;}
  if(!Number.isFinite(principal)||principal<=0||!Number.isFinite(rate)||rate<0){clearResults();note.textContent='Enter a principal greater than zero and a valid monthly rate (zero or more).';return;}
- const parseDate=value=>{const m=/^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(value);if(!m)return null;const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),t=Date.UTC(y,mo-1,d);const check=new Date(t);return check.getUTCFullYear()===y&&check.getUTCMonth()===mo-1&&check.getUTCDate()===d?t:null;};
+ const parseDate=value=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(value);if(!m)return null;const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),t=Date.UTC(y,mo-1,d);const check=new Date(t);return check.getUTCFullYear()===y&&check.getUTCMonth()===mo-1&&check.getUTCDate()===d?t:null;};
  const start=parseDate(from),end=parseDate(to);
  if(start===null||end===null){clearResults();note.textContent='Please select valid dates.';return;}
  const days=Math.round((end-start)/86400000);
