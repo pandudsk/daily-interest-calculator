@@ -639,8 +639,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 40', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.39"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 41', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.40"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -651,7 +651,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.39", code: 40 };
+          window.APP_VERSION = { name: "1.40", code: 41 };
           EOF
           npx cap copy android
 
@@ -805,17 +805,27 @@ jobs:
           echo "=== RELEASE KEY SHA-1 ==="
           keytool -list -v -keystore android/app/keystore/dintakurthi-release.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" | grep -E 'SHA1:'
 
-      - name: Build Signed Release APK
+      - name: Build Signed Release APK and Android App Bundle
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease bundleRelease
 
-      - name: Upload Signed Release APK
+      - name: Verify release package outputs
+        run: |
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          test -s android/app/build/outputs/bundle/release/app-release.aab
+          mkdir -p dist/store-release
+          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.40-41-release.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.40-41-release.aab
+          sha256sum dist/store-release/* > dist/store-release/SHA256SUMS.txt
+          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.40\\nVersion code: 41\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
+
+      - name: Upload Store Release Package Set
         uses: actions/upload-artifact@v4
         with:
-          name: daily-interest-calculator-signed-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: daily-khata-book-store-release-v1.40-build41
+          path: dist/store-release/*
           if-no-files-found: error
