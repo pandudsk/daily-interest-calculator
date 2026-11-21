@@ -84,17 +84,24 @@ async function readSafetyCopy() {
 }
 
 async function getSafetyCopyInfo() {
- let raw=await readRaw(AUTO_BACKUP);
- let source='App storage';
- try { if(raw) validateBackup(raw); else throw new Error('missing'); }
- catch (_) { raw=await readDownloadsRaw(); source='Downloads'; }
- if(!raw) return {available:false,verified:false,customers:0,transactions:0,exportedAt:null,source:null,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
- try {
-  const result=validateBackup(raw);
-  return {available:true,verified:true,customers:result.customers,transactions:result.transactions,exportedAt:result.data.exportedAt||null,source,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
- } catch (_) {
-  return {available:true,verified:false,customers:0,transactions:0,exportedAt:null,source,downloadPath:'Downloads/Daily Khata Book/automatic-backup.json'};
- }
+ const internalRaw=await readRaw(AUTO_BACKUP);
+ const downloadsRaw=await readDownloadsRaw();
+ let internal=null, downloads=null;
+ try { if(internalRaw) internal=validateBackup(internalRaw); } catch (_) {}
+ try { if(downloadsRaw) downloads=validateBackup(downloadsRaw); } catch (_) {}
+ const selected=downloads||internal;
+ if(!selected) return {available:false,verified:false,internalVerified:false,downloadsVerified:false,customers:0,transactions:0,exportedAt:null,source:null,downloadPath:'Download/Daily Khata Book/automatic-backup.json'};
+ return {
+  available:true,
+  verified:!!downloads,
+  internalVerified:!!internal,
+  downloadsVerified:!!downloads,
+  customers:selected.customers,
+  transactions:selected.transactions,
+  exportedAt:selected.data.exportedAt||null,
+  source:downloads?'Phone Downloads':'App storage only',
+  downloadPath:'Download/Daily Khata Book/automatic-backup.json'
+ };
 }
 
 window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo};
