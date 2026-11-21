@@ -157,6 +157,27 @@ jobs:
           import java.io.OutputStream;
           @CapacitorPlugin(name="NativeBackupDownloads")
           public class NativeBackupDownloadsPlugin extends Plugin {
+            @PluginMethod public void openKhataFolder(PluginCall call) {
+              try {
+                if (Build.VERSION.SDK_INT < 29) throw new Exception("Opening the shared Daily Khata Book folder requires Android 10 or later.");
+                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT_TREE);
+                intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                intent.addFlags(android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                if (Build.VERSION.SDK_INT >= 26) {
+                  Uri initial = android.provider.DocumentsContract.buildTreeDocumentUri(
+                    "com.android.externalstorage.documents", "primary:Download/Daily Khata Book");
+                  intent.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, initial);
+                }
+                getActivity().startActivityForResult(intent, 7842);
+                JSObject result = new JSObject();
+                result.put("opened", true);
+                result.put("note", "Android folder picker opened at the Daily Khata Book location. Confirm the folder in the system picker.");
+                call.resolve(result);
+              } catch (Exception e) {
+                call.reject("Could not open Daily Khata Book in Android File Manager", e);
+              }
+            }
             @PluginMethod public void ensureFolderStructure(PluginCall call) {
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();
