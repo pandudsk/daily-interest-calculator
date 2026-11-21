@@ -3,7 +3,7 @@ name: Build Daily Khata Book Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, release/v1.3-audit-share-print, v1.20-development, ui/design-6-navigation, feature/logo-cloud-backup ]
+    branches: [ main, release/v1.3-audit-share-print, v1.20-development, ui/design-6-navigation, feature/logo-cloud-backup, recovery/read-only-storage-key-rescue ]
 
 jobs:
   build:
@@ -254,7 +254,7 @@ jobs:
                 if(target==null){call.reject("Automatic backup file not found in Downloads");return;}
                 StringBuilder content=new StringBuilder();
                 try(java.io.InputStream in=resolver.openInputStream(target);java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(in,java.nio.charset.StandardCharsets.UTF_8))){
-                  String line;while((line=reader.readLine())!=null){content.append(line).append('\\n');}
+                  String line;while((line=reader.readLine())!=null){content.append(line).append('\n');}
                 }
                 JSObject result=new JSObject();result.put("content",content.toString());call.resolve(result);
               } catch(Exception e){call.reject("Could not read backup file from Downloads",e);}
@@ -602,7 +602,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.37", code: 38 };
+          window.APP_VERSION = { name: "1.39", code: 40 };
           EOF
           npx cap copy android
 
@@ -668,6 +668,13 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-interest-calculator-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
 
       - name: Prepare release signing key
         env:
@@ -756,13 +763,6 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-interest-calculator-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
 
       - name: Upload Signed Release APK
         uses: actions/upload-artifact@v4
