@@ -106,7 +106,22 @@ async function getSafetyCopyInfo() {
  };
 }
 
-window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo};
+async function updateBackupSnapshot(json) {
+ if(!Capacitor.isNativePlatform()||!NativeBackupDownloads?.updateBackupSnapshot)return false;
+ const result=await NativeBackupDownloads.updateBackupSnapshot({content:json});
+ return !!result?.saved;
+}
+async function listBackupFiles() {
+ if(!Capacitor.isNativePlatform()||!NativeBackupDownloads?.listBackupFiles)return [];
+ const result=await NativeBackupDownloads.listBackupFiles();
+ return Array.isArray(result?.files)?result.files:[];
+}
+async function readBackupFile(filename) {
+ if(!Capacitor.isNativePlatform()||!NativeBackupDownloads?.readBackupFile)throw new Error('Backup archive is unavailable on this device.');
+ const result=await NativeBackupDownloads.readBackupFile({filename});
+ return typeof result?.content==='string'?result.content:null;
+}
+window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo,updateBackupSnapshot,listBackupFiles,readBackupFile};
 if(Capacitor.isNativePlatform() && NativeBackupDownloads?.ensureFolderStructure){
  NativeBackupDownloads.ensureFolderStructure().then(result=>console.info('Daily Khata Book folders ready:',result?.path)).catch(error=>console.warn('Could not prepare shared folders:',error));
 }
