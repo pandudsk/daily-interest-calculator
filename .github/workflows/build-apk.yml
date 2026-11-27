@@ -181,7 +181,7 @@ jobs:
             @PluginMethod public void ensureFolderStructure(PluginCall call) {
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();
-                String[] folders=new String[]{"Document","Backup/Manual","Backup/Automatic","Gallery/Bills","Gallery/UPI Screenshots","Gallery/Transaction Images"};
+                String[] folders=new String[]{"Backup/Automatic","Document","Bills","Payments"};
                 for(String folder:folders){
                   String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
                   String marker="Folder Info.txt";
@@ -203,7 +203,7 @@ jobs:
                     ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);resolver.update(uri,done,null,null);
                   }
                 }
-                JSObject result=new JSObject();result.put("created",true);result.put("path","Downloads/Daily Khata Book/Document, Backup/Manual, Backup/Automatic, Gallery/Bills, Gallery/UPI Screenshots, Gallery/Transaction Images");call.resolve(result);
+                JSObject result=new JSObject();result.put("created",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Document, Bills, Payments");call.resolve(result);
               } catch(Exception e){call.reject("Could not create Daily Khata Book folders",e);}
             }
             @PluginMethod public void saveToDownloads(PluginCall call) {
@@ -240,7 +240,11 @@ jobs:
               } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
             }
             @PluginMethod public void saveFile(PluginCall call) {
-              String folder=call.getString("folder","Transactions");
+              String requestedFolder=call.getString("folder","Bills");
+              String folder;
+              if("Document".equals(requestedFolder)||"Shop Documents".equals(requestedFolder)||requestedFolder.startsWith("Shop Documents/")) folder="Document";
+              else if(requestedFolder.contains("/Debits")||"Payments".equals(requestedFolder)||"Gallery/UPI Screenshots".equals(requestedFolder)||"Gallery/Transaction Images".equals(requestedFolder)) folder="Payments";
+              else folder="Bills";
               String filename=call.getString("filename","attachment.bin");
               String base64=call.getString("base64");
               String mime=call.getString("mimeType","application/octet-stream");
@@ -639,8 +643,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 45', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.44"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 46', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.45"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -651,7 +655,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.44", code: 45 };
+          window.APP_VERSION = { name: "1.45", code: 46 };
           EOF
           npx cap copy android
 
@@ -818,14 +822,14 @@ jobs:
           test -s android/app/build/outputs/apk/release/app-release.apk
           test -s android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p dist/store-release
-          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.44-45-release.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.44-45-release.aab
+          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.45-46-release.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.45-46-release.aab
           sha256sum dist/store-release/* > dist/store-release/SHA256SUMS.txt
-          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.44\\nVersion code: 45\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
+          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.45\\nVersion code: 46\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
 
       - name: Upload Store Release Package Set
         uses: actions/upload-artifact@v4
         with:
-          name: daily-khata-book-store-release-v1.43-build44
+          name: daily-khata-book-store-release-v1.45-build46
           path: dist/store-release/*
           if-no-files-found: error
