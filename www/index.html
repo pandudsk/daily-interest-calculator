@@ -905,7 +905,8 @@ $('restoreFile').onchange=async e=>{
  catch(err){console.error('Restore failed',err);toast(msg[lang].badBackup+' '+(err?.message||''));}
  finally{e.target.value='';}
 };
-function escapeHtml(value){return String(value??'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[ch]));}\nasync function loadBackupArchive(){
+function escapeHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+async function loadBackupArchive(){
  const host=$('backupArchiveList');if(!host)return;
  host.innerHTML='<p class="muted">Loading backup history…</p>';
  try{
