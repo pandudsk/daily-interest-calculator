@@ -952,7 +952,17 @@ $('deleteAllBtn').onclick=()=>{if(confirm(msg[lang].confirmAll)){state=blank();s
  const byId=id=>document.getElementById(id);
  const overlay=byId('shopProfileOverlay');
  const mounts=[['shopProfileCard','shopProfileMount'],['fileStorageCard','fileManagerMount'],['overlayLogoutCard','overlayLogoutMount']];
- mounts.forEach(([cardId,mountId])=>{const card=byId(cardId),mount=byId(mountId);if(card&&mount){mount.appendChild(card);card.open=true;}});
+ mounts.forEach(([cardId,mountId])=>{const card=byId(cardId),mount=byId(mountId);if(card&&mount){mount.appendChild(card);card.open=false;}});
+ const panelBody=overlay?.querySelector('.shop-profile-panel-body');
+ if(panelBody){
+  // Shop Profile overlay uses a single-open accordion: opening one card closes every other card.
+  panelBody.querySelectorAll('details.settings-card').forEach(card=>{card.open=false;});
+  panelBody.addEventListener('toggle',event=>{
+   const opened=event.target;
+   if(!(opened instanceof HTMLDetailsElement)||!opened.open||!opened.classList.contains('settings-card'))return;
+   panelBody.querySelectorAll('details.settings-card[open]').forEach(card=>{if(card!==opened)card.open=false;});
+  },true);
+ }
  function open(){if(!overlay)return;overlay.classList.remove('hidden');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
  function close(){if(!overlay)return;overlay.classList.add('hidden');overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}
  byId('headerLogoTap')?.addEventListener('click',open);
