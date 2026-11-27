@@ -1,16 +1,31 @@
 import { registerPlugin } from '@capacitor/core';
 const NativeBackupDownloads=registerPlugin('NativeBackupDownloads');
 const DB_NAME='daily-khata-files', STORE='files', DB_VERSION=1;
+function safeFolderPart(value,fallback='Customer'){
+ const cleaned=String(value||fallback).normalize('NFKC').replace(/[\\\\/:*?"<>|]/g,'_').replace(/[. ]+$/g,'').trim();
+ return (cleaned||fallback).slice(0,70);
+}
+function timestampForRecord(record){
+ const date=String(record.date||'').match(/^\\d{4}-\\d{2}-\\d{2}$/)?record.date:new Date(record.createdAt||Date.now()).toISOString().slice(0,10);
+ const stamp=new Date(Number(record.createdAt)||Date.now());
+ const time=[stamp.getHours(),stamp.getMinutes(),stamp.getSeconds()].map(v=>String(v).padStart(2,'0')).join('-');
+ return {date,time};
+}
 async function mirrorToDownloads(record){
  if(!record?.blob||!record?.id)return false;
  const dataUrl=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(String(fr.result));fr.onerror=reject;fr.readAsDataURL(record.blob)});
  const base64=dataUrl.split(',')[1]||'';
  const sourceFolder=String(record.folder||'');
  const isShopDocument=sourceFolder.startsWith('Shop Documents')||sourceFolder==='Document';
- const isDebit=sourceFolder.includes('/Debits')||String(record.type||'').toLowerCase()==='debit';
- const folder=isShopDocument?'Document':(isDebit?'Payments':'Bills');
- const safeName=String(record.name||'attachment').replace(/[\\/:*?\"<>|]/g,'_');
- await NativeBackupDownloads.saveFile({folder,filename:`${record.id}-${safeName}`,base64,mimeType:record.mimeType||record.blob.type||'application/octet-stream'});
+ const isDebit=String(record.type||'').toLowerCase()==='debit'||sourceFolder.includes('Debits');
+ const side=isDebit?'Debits':'Credits';
+ const customer=safeFolderPart(record.customerName,'Customer');
+ const customerKey=safeFolderPart(String(record.customerId||'').slice(0,8),'legacy');
+ const folder=isShopDocument?'Shop Documents':(record.customerId?side+'/'+customer+'__'+customerKey:side+'/'+customer);
+ const {date,time}=timestampForRecord(record);
+ const original=safeFolderPart(record.name||'attachment','attachment');
+ const filename=`${date}_${time}_${String(record.id).slice(0,8)}_${original}`;
+ await NativeBackupDownloads.saveFile({folder,filename,base64,mimeType:record.mimeType||record.blob.type||'application/octet-stream'});
  return true;
 }
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'id'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
