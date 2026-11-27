@@ -893,11 +893,11 @@ $('backupBtn').onclick=async()=>{
   if(!result?.verified)throw new Error('Backup file verification did not complete.');
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
   const filename='Khata-Manual-'+stamp+'.json';
-  const saved=await window.NativeBackupDownloads.saveToDownloads({filename,content:json});
-  const check=await window.NativeBackup.readBackupFile(filename);
+  const saved=await window.NativeBackupDownloads.saveToDownloads({filename,folder:'Backup/Manual',content:json});
+  const check=await window.NativeBackup.readBackupFile(filename,'Backup/Manual');
   if(check!==json)throw new Error('Manual backup file verification failed.');
   await refreshLocalBackupStatus();await loadBackupArchive();
-  toast('Manual backup saved and verified in Backup/Automatic.');
+  toast('Manual backup saved and verified in Backup/Manual.');
  }catch(err){console.error('Physical backup failed',err);toast('Backup failed. '+(err?.message||''));}
 };
 $('restoreBtn').onclick=async()=>{
@@ -920,7 +920,7 @@ async function loadBackupArchive(){
   const entries=[];
   for(const file of files){
    try{
-    const raw=await window.NativeBackup.readBackupFile(file.name),data=JSON.parse(raw||'{}');
+    const raw=await window.NativeBackup.readBackupFile(file.name,file.folder||'Backup/Automatic'),data=JSON.parse(raw||'{}');
     if(data.format!=='dintakurthi-daily-interest'||!Array.isArray(data.customers)||!data.settings)throw new Error('Backup structure is invalid');
     const customers=data.customers;
     const names=customers.map(c=>String(c.name||'')).filter(Boolean);
@@ -939,8 +939,8 @@ async function loadBackupArchive(){
    return sort==='date-asc'?ad-bd:bd-ad;
   });
   if(!filtered.length){host.innerHTML='<p class="muted">No matching backup files found.</p>';return;}
-  host.innerHTML=filtered.map((x,i)=>{const stamp=x.modified?new Date(Number(x.modified)*1000).toLocaleString():(x.exportedAt?new Date(x.exportedAt).toLocaleString():x.name);const customers=x.customerNames.slice(0,3).join(', ')+(x.customerNames.length>3?' +'+(x.customerNames.length-3)+' more':'');const size=(Number(x.size||0)/1024).toFixed(1)+' KB';return '<div style="border-top:1px solid var(--line);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px;overflow-wrap:anywhere">'+escapeHtml(x.name)+'</b><span class="pill">'+(x.invalid?'Invalid':'Valid backup')+'</span></div><div class="muted" style="font-size:12px;margin-top:4px">'+escapeHtml(stamp)+' · '+size+'</div><div style="font-size:12px;margin-top:4px">Customers: '+x.customerCount+' · Transactions: '+x.transactionCount+'</div><div class="muted" style="font-size:12px;margin-top:3px;overflow-wrap:anywhere">'+escapeHtml(customers||'No customer names')+'</div><button type="button" class="secondary backup-restore-entry" data-backup-name="'+escapeHtml(x.name)+'" style="margin-top:7px;padding:8px 12px" '+(x.invalid?'disabled':'')+'>Restore this backup</button></div>';}).join('');
-  host.querySelectorAll('.backup-restore-entry').forEach(btn=>btn.addEventListener('click',async()=>{try{const raw=await window.NativeBackup.readBackupFile(btn.dataset.backupName);await restoreBackupObject(JSON.parse(raw));}catch(error){console.error('Archive restore failed',error);toast('Restore failed: '+(error?.message||''));}}));
+  host.innerHTML=filtered.map((x,i)=>{const stamp=x.modified?new Date(Number(x.modified)*1000).toLocaleString():(x.exportedAt?new Date(x.exportedAt).toLocaleString():x.name);const customers=x.customerNames.slice(0,3).join(', ')+(x.customerNames.length>3?' +'+(x.customerNames.length-3)+' more':'');const size=(Number(x.size||0)/1024).toFixed(1)+' KB';return '<div style="border-top:1px solid var(--line);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px;overflow-wrap:anywhere">'+escapeHtml(x.name)+'</b><span class="pill">'+(x.invalid?'Invalid':'Valid backup')+'</span></div><div class="muted" style="font-size:12px;margin-top:4px">'+escapeHtml(stamp)+' · '+escapeHtml((x.folder||'Backup/Automatic').replace('Backup/',''))+' · '+size+'</div><div style="font-size:12px;margin-top:4px">Customers: '+x.customerCount+' · Transactions: '+x.transactionCount+'</div><div class="muted" style="font-size:12px;margin-top:3px;overflow-wrap:anywhere">'+escapeHtml(customers||'No customer names')+'</div><button type="button" class="secondary backup-restore-entry" data-backup-name="'+escapeHtml(x.name)+'" data-backup-folder="'+escapeHtml(x.folder||'Backup/Automatic')+'" style="margin-top:7px;padding:8px 12px" '+(x.invalid?'disabled':'')+'>Restore this backup</button></div>';}).join('');
+  host.querySelectorAll('.backup-restore-entry').forEach(btn=>btn.addEventListener('click',async()=>{try{const raw=await window.NativeBackup.readBackupFile(btn.dataset.backupName,btn.dataset.backupFolder||'Backup/Automatic');await restoreBackupObject(JSON.parse(raw));}catch(error){console.error('Archive restore failed',error);toast('Restore failed: '+(error?.message||''));}}));
  }catch(error){console.error('Backup archive listing failed',error);host.innerHTML='<p class="muted">Could not load backup history: '+escapeHtml(error?.message||'')+'</p>';}
 }
 ['backupDateFilter','backupCustomerFilter','backupSortMode','refreshBackupArchiveBtn'].forEach(id=>$(id)?.addEventListener(id==='refreshBackupArchiveBtn'?'click':'change',loadBackupArchive));
