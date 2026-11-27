@@ -410,7 +410,7 @@ jobs:
               } catch(Exception e){call.reject("Could not read backup file from Downloads",e);}
             }
           }
-          JAVA 
+          JAVA
           cat > android/app/src/main/java/com/dintakurthi/dailyinterest/DailyKhataBackupWorker.java <<'JAVA'
           package com.dintakurthi.dailyinterest;
           import android.content.ContentValues;
