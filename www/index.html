@@ -552,7 +552,7 @@ async function runScheduledLocalBackup(force=false,onDataChange=false){
  // WorkManager can write it to Downloads even while the app process is closed.
  if(window.NativeBackup?.updateBackupSnapshot)await window.NativeBackup.updateBackupSnapshot(json);
  const info=await window.NativeBackup?.getSafetyCopyInfo?.();
- if(!force&&!onDataChange&&!isScheduledBackupDue(info?.exportedAt,'Daily'))return false;
+ if(!force&&!isScheduledBackupDue(info?.exportedAt,'Daily'))return false;
  await window.NativeBackup.saveSafetyCopy(json,'automatic-backup.json');
  await refreshLocalBackupStatus();await loadBackupArchive();return true;
 }
