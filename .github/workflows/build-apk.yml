@@ -639,8 +639,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 44', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.43"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 45', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.44"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -651,7 +651,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.43", code: 44 };
+          window.APP_VERSION = { name: "1.44", code: 45 };
           EOF
           npx cap copy android
 
@@ -818,10 +818,10 @@ jobs:
           test -s android/app/build/outputs/apk/release/app-release.apk
           test -s android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p dist/store-release
-          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.43-44-release.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.43-44-release.aab
+          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.44-45-release.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.44-45-release.aab
           sha256sum dist/store-release/* > dist/store-release/SHA256SUMS.txt
-          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.43\\nVersion code: 44\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
+          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.44\\nVersion code: 45\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
 
       - name: Upload Store Release Package Set
         uses: actions/upload-artifact@v4
