@@ -6,7 +6,7 @@ function safeFolderPart(value,fallback='Customer'){
  return (cleaned||fallback).slice(0,70);
 }
 function timestampForRecord(record){
- const date=String(record.date||'').match(/^\\d{4}-\\d{2}-\\d{2}$/)?record.date:new Date(record.createdAt||Date.now()).toISOString().slice(0,10);
+ const date=String(record.date||'').match(/^\d{4}-\d{2}-\d{2}$/)?record.date:new Date(record.createdAt||Date.now()).toISOString().slice(0,10);
  const stamp=new Date(Number(record.createdAt)||Date.now());
  const time=[stamp.getHours(),stamp.getMinutes(),stamp.getSeconds()].map(v=>String(v).padStart(2,'0')).join('-');
  return {date,time};
