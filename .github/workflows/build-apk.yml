@@ -257,35 +257,29 @@ jobs:
             @PluginMethod public void saveToDownloads(PluginCall call) {
               String filename=call.getString("filename","automatic-backup.json");
               String content=call.getString("content");
+              String backupFolder=call.getString("folder","Backup/Automatic");
               if(content==null){call.reject("Backup content is missing");return;}
+              if(!"Backup/Automatic".equals(backupFolder)&&!"Backup/Manual".equals(backupFolder)){call.reject("Invalid backup destination");return;}
               if(Build.VERSION.SDK_INT<29){call.reject("Public Downloads backup requires Android 10 or later");return;}
               try {
-                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic";
+                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+backupFolder;
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-                String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                String[] args=new String[]{filename,relative+"/"};
-                Uri target=null;
-                try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
-                  if(cursor!=null&&cursor.moveToFirst()) target=Uri.withAppendedPath(collection,cursor.getString(0));
-                }
-                if(target==null){
-                  ContentValues values=new ContentValues();
-                  values.put(MediaStore.MediaColumns.DISPLAY_NAME,filename);
-                  values.put(MediaStore.MediaColumns.MIME_TYPE,"application/json");
-                  values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
-                  values.put(MediaStore.MediaColumns.IS_PENDING,1);
-                  target=resolver.insert(collection,values);
-                }
-                if(target==null)throw new Exception("Could not create backup file in Downloads");
-                try(OutputStream out=resolver.openOutputStream(target,"wt")){
+                ContentValues values=new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME,filename);
+                values.put(MediaStore.MediaColumns.MIME_TYPE,"application/json");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
+                values.put(MediaStore.MediaColumns.IS_PENDING,1);
+                Uri target=resolver.insert(collection,values);
+                if(target==null)throw new Exception("Could not create a new backup file in Downloads");
+                try(OutputStream out=resolver.openOutputStream(target,"w")){
                   if(out==null)throw new Exception("Could not open backup file");
                   out.write(content.getBytes(java.nio.charset.StandardCharsets.UTF_8));out.flush();
                 }
                 ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);
                 resolver.update(target,done,null,null);
-                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/Backup/Automatic/"+filename);call.resolve(result);
-              } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
+                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+backupFolder+"/"+filename);call.resolve(result);
+              } catch(Exception e){call.reject("Could not save backup to Downloads",e);}
             }
             @PluginMethod public void saveFile(PluginCall call) {
               String requestedFolder=call.getString("folder","Credit Bills");
@@ -344,32 +338,37 @@ jobs:
               try {
                 com.getcapacitor.JSArray files=new com.getcapacitor.JSArray();
                 android.content.ContentResolver resolver=getContext().getContentResolver();
-                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic/";
-                String selection=MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                  new String[]{MediaStore.MediaColumns._ID,MediaStore.MediaColumns.DISPLAY_NAME,MediaStore.MediaColumns.DATE_MODIFIED,MediaStore.MediaColumns.SIZE},selection,new String[]{relative},MediaStore.MediaColumns.DATE_MODIFIED+" DESC")){
-                  if(cursor!=null)while(cursor.moveToNext()){
-                    String name=cursor.getString(1);if(name==null||!name.toLowerCase(java.util.Locale.ROOT).endsWith(".json"))continue;
-                    JSObject item=new JSObject();item.put("name",name);item.put("modified",cursor.getLong(2));item.put("size",cursor.getLong(3));
-                    item.put("uri",Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI,cursor.getString(0)).toString());files.put(item);
+                String[] folders=new String[]{"Backup/Automatic/","Backup/Manual/"};
+                for(String folder:folders){
+                  String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
+                  String selection=MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                  try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    new String[]{MediaStore.MediaColumns._ID,MediaStore.MediaColumns.DISPLAY_NAME,MediaStore.MediaColumns.DATE_MODIFIED,MediaStore.MediaColumns.SIZE},selection,new String[]{relative},MediaStore.MediaColumns.DATE_MODIFIED+" DESC")){
+                    if(cursor!=null)while(cursor.moveToNext()){
+                      String name=cursor.getString(1);if(name==null||!name.toLowerCase(java.util.Locale.ROOT).endsWith(".json"))continue;
+                      JSObject item=new JSObject();item.put("name",name);item.put("folder",folder.substring(0,folder.length()-1));item.put("modified",cursor.getLong(2));item.put("size",cursor.getLong(3));
+                      item.put("uri",Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI,cursor.getString(0)).toString());files.put(item);
+                    }
                   }
                 }
                 JSObject result=new JSObject();result.put("files",files);call.resolve(result);
-              } catch(Exception e){call.reject("Could not list automatic backup files",e);}
+              } catch(Exception e){call.reject("Could not list backup files",e);}
             }
             @PluginMethod public void readBackupFile(PluginCall call) {
-              String filename=call.getString("filename");if(filename==null||filename.contains("/")||filename.contains("\\\\")){call.reject("Invalid backup filename");return;}
+              String filename=call.getString("filename");
+              String folder=call.getString("folder","Backup/Automatic");
+              if(filename==null||filename.contains("/")||filename.contains("\\")||(!"Backup/Automatic".equals(folder)&&!"Backup/Manual".equals(folder))){call.reject("Invalid backup file selection");return;}
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();Uri target=null;
                 String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                String[] args=new String[]{filename,Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic/"};
+                String[] args=new String[]{filename,Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder+"/"};
                 try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
                   if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI,cursor.getString(0));
                 }
                 if(target==null){call.reject("Backup file not found");return;}
                 StringBuilder content=new StringBuilder();
                 try(java.io.InputStream in=resolver.openInputStream(target);java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(in,java.nio.charset.StandardCharsets.UTF_8))){
-                  String line;while((line=reader.readLine())!=null)content.append(line).append('\\n');
+                  String line;while((line=reader.readLine())!=null)content.append(line).append('\n');
                 }
                 JSObject result=new JSObject();result.put("content",content.toString());call.resolve(result);
               } catch(Exception e){call.reject("Could not read selected backup",e);}
