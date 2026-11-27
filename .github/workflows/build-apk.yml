@@ -149,6 +149,12 @@ jobs:
           import android.os.Build;
           import android.os.Environment;
           import android.provider.MediaStore;
+          import androidx.work.Constraints;
+          import androidx.work.ExistingPeriodicWorkPolicy;
+          import androidx.work.NetworkType;
+          import androidx.work.PeriodicWorkRequest;
+          import androidx.work.WorkManager;
+          import java.util.concurrent.TimeUnit;
           import com.getcapacitor.JSObject;
           import com.getcapacitor.Plugin;
           import com.getcapacitor.PluginCall;
@@ -203,7 +209,10 @@ jobs:
                     ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);resolver.update(uri,done,null,null);
                   }
                 }
-                JSObject result=new JSObject();result.put("created",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Document, Bills, Payments");call.resolve(result);
+                Constraints constraints=new Constraints.Builder().setRequiredNetworkType(NetworkType.NOT_REQUIRED).build();
+                PeriodicWorkRequest dailyWork=new PeriodicWorkRequest.Builder(DailyKhataBackupWorker.class,24,TimeUnit.HOURS).setConstraints(constraints).build();
+                WorkManager.getInstance(getContext()).enqueueUniquePeriodicWork("daily-khata-automatic-backup",ExistingPeriodicWorkPolicy.KEEP,dailyWork);
+                JSObject result=new JSObject();result.put("created",true);result.put("scheduled",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Document, Bills, Payments");call.resolve(result);
               } catch(Exception e){call.reject("Could not create Daily Khata Book folders",e);}
             }
             @PluginMethod public void saveToDownloads(PluginCall call) {
@@ -276,6 +285,49 @@ jobs:
                 JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+folder+"/"+filename);call.resolve(result);
               } catch(Exception e){call.reject("Could not copy file into Downloads",e);}
             }
+            @PluginMethod public void updateBackupSnapshot(PluginCall call) {
+              String content=call.getString("content");
+              if(content==null||content.trim().isEmpty()){call.reject("Backup snapshot is empty");return;}
+              try {
+                java.io.File file=new java.io.File(getContext().getFilesDir(),"khata-backup-snapshot.json");
+                try(java.io.FileOutputStream out=new java.io.FileOutputStream(file,false)){out.write(content.getBytes(java.nio.charset.StandardCharsets.UTF_8));out.getFD().sync();}
+                JSObject result=new JSObject();result.put("saved",true);result.put("bytes",file.length());call.resolve(result);
+              } catch(Exception e){call.reject("Could not update background backup snapshot",e);}
+            }
+            @PluginMethod public void listBackupFiles(PluginCall call) {
+              try {
+                com.getcapacitor.JSArray files=new com.getcapacitor.JSArray();
+                android.content.ContentResolver resolver=getContext().getContentResolver();
+                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic/";
+                String selection=MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                  new String[]{MediaStore.MediaColumns._ID,MediaStore.MediaColumns.DISPLAY_NAME,MediaStore.MediaColumns.DATE_MODIFIED,MediaStore.MediaColumns.SIZE},selection,new String[]{relative},MediaStore.MediaColumns.DATE_MODIFIED+" DESC")){
+                  if(cursor!=null)while(cursor.moveToNext()){
+                    String name=cursor.getString(1);if(name==null||!name.toLowerCase(java.util.Locale.ROOT).endsWith(".json"))continue;
+                    JSObject item=new JSObject();item.put("name",name);item.put("modified",cursor.getLong(2));item.put("size",cursor.getLong(3));
+                    item.put("uri",Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI,cursor.getString(0)).toString());files.put(item);
+                  }
+                }
+                JSObject result=new JSObject();result.put("files",files);call.resolve(result);
+              } catch(Exception e){call.reject("Could not list automatic backup files",e);}
+            }
+            @PluginMethod public void readBackupFile(PluginCall call) {
+              String filename=call.getString("filename");if(filename==null||filename.contains("/")||filename.contains("\\\\")){call.reject("Invalid backup filename");return;}
+              try {
+                android.content.ContentResolver resolver=getContext().getContentResolver();Uri target=null;
+                String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                String[] args=new String[]{filename,Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic/"};
+                try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
+                  if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI,cursor.getString(0));
+                }
+                if(target==null){call.reject("Backup file not found");return;}
+                StringBuilder content=new StringBuilder();
+                try(java.io.InputStream in=resolver.openInputStream(target);java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(in,java.nio.charset.StandardCharsets.UTF_8))){
+                  String line;while((line=reader.readLine())!=null)content.append(line).append('\\n');
+                }
+                JSObject result=new JSObject();result.put("content",content.toString());call.resolve(result);
+              } catch(Exception e){call.reject("Could not read selected backup",e);}
+            }
             @PluginMethod public void openBackup(PluginCall call) {
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();
@@ -313,7 +365,61 @@ jobs:
               } catch(Exception e){call.reject("Could not read backup file from Downloads",e);}
             }
           }
+          JAVA 
+          cat > android/app/src/main/java/com/dintakurthi/dailyinterest/DailyKhataBackupWorker.java <<'JAVA'
+          package com.dintakurthi.dailyinterest;
+          import android.content.ContentValues;
+          import android.content.Context;
+          import android.net.Uri;
+          import android.os.Environment;
+          import android.provider.MediaStore;
+          import androidx.annotation.NonNull;
+          import androidx.work.Worker;
+          import androidx.work.WorkerParameters;
+          import java.io.File;
+          import java.io.FileInputStream;
+          import java.io.OutputStream;
+          import java.nio.charset.StandardCharsets;
+          import java.text.SimpleDateFormat;
+          import java.util.Date;
+          import java.util.Locale;
+          public class DailyKhataBackupWorker extends Worker {
+            public DailyKhataBackupWorker(@NonNull Context context,@NonNull WorkerParameters params){super(context,params);}
+            @NonNull @Override public Result doWork(){
+              try{
+                File snapshot=new File(getApplicationContext().getFilesDir(),"khata-backup-snapshot.json");
+                if(!snapshot.isFile()||snapshot.length()==0)return Result.retry();
+                byte[] data=new byte[(int)snapshot.length()];
+                try(FileInputStream in=new FileInputStream(snapshot)){int offset=0,n;while(offset<data.length&&(n=in.read(data,offset,data.length-offset))>0)offset+=n;if(offset!=data.length)return Result.retry();}
+                String json=new String(data,StandardCharsets.UTF_8);
+                org.json.JSONObject parsed=new org.json.JSONObject(json);
+                if(!parsed.has("customers")||!parsed.has("settings"))return Result.failure();
+                Context context=getApplicationContext();android.content.ContentResolver resolver=context.getContentResolver();
+                String folder=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/Backup/Automatic";
+                String stamp=new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss",Locale.US).format(new Date());
+                writeFile(resolver,folder,"Khata-Backup-"+stamp+".json",json);
+                writeFile(resolver,folder,"automatic-backup.json",json);
+                return Result.success();
+              }catch(Exception e){android.util.Log.e("DailyKhataBackup","Daily backup failed",e);return Result.retry();}
+            }
+            private void writeFile(android.content.ContentResolver resolver,String folder,String name,String content)throws Exception{
+              Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+              String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+              Uri target=null;
+              try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,new String[]{name,folder+"/"},null)){
+                if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
+              }
+              if(target==null){
+                ContentValues values=new ContentValues();values.put(MediaStore.MediaColumns.DISPLAY_NAME,name);values.put(MediaStore.MediaColumns.MIME_TYPE,"application/json");values.put(MediaStore.MediaColumns.RELATIVE_PATH,folder);values.put(MediaStore.MediaColumns.IS_PENDING,1);
+                target=resolver.insert(collection,values);
+              }
+              if(target==null)throw new Exception("Could not create "+name);
+              try(OutputStream out=resolver.openOutputStream(target,"wt")){if(out==null)throw new Exception("Could not write "+name);out.write(content.getBytes(StandardCharsets.UTF_8));out.flush();}
+              ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);resolver.update(target,done,null,null);
+            }
+          }
           JAVA
+
 
       - name: Add native Android PrintManager plugin
         run: |
@@ -494,6 +600,9 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
           dependency = 'implementation "androidx.biometric:biometric:1.1.0"'
+          work_dependency = 'implementation "androidx.work:work-runtime:2.9.1"'
+          if work_dependency not in text:
+              text = text.replace("dependencies {", "dependencies {\\n    " + work_dependency, 1)
           if dependency not in text:
               if "dependencies {" not in text:
                   raise SystemExit("Gradle dependencies block not found")
@@ -643,8 +752,8 @@ jobs:
           path = Path("android/app/build.gradle")
           text = path.read_text()
 
-          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 46', text, count=1)
-          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.45"', text, count=1)
+          text, count1 = re.subn(r'versionCode\s+\d+', 'versionCode 47', text, count=1)
+          text, count2 = re.subn(r'versionName\s+"[^"]+"', 'versionName "1.46"', text, count=1)
 
           if count1 != 1 or count2 != 1:
               raise SystemExit("Version fields not found")
@@ -655,7 +764,7 @@ jobs:
       - name: Generate app version metadata
         run: |
           cat > www/app-version.js <<'EOF'
-          window.APP_VERSION = { name: "1.45", code: 46 };
+          window.APP_VERSION = { name: "1.46", code: 47 };
           EOF
           npx cap copy android
 
@@ -822,14 +931,14 @@ jobs:
           test -s android/app/build/outputs/apk/release/app-release.apk
           test -s android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p dist/store-release
-          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.45-46-release.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.45-46-release.aab
+          cp android/app/build/outputs/apk/release/app-release.apk dist/store-release/Daily-Khata-Book-1.46-47-release.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/store-release/Daily-Khata-Book-1.46-47-release.aab
           sha256sum dist/store-release/* > dist/store-release/SHA256SUMS.txt
-          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.45\\nVersion code: 46\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
+          printf 'App: Daily Khata Book\\nPackage: com.dintakurthi.dailyinterest\\nVersion: 1.46\\nVersion code: 47\\nBuild type: signed release\\nFormats: APK, AAB\\n' > dist/store-release/RELEASE-INFO.txt
 
       - name: Upload Store Release Package Set
         uses: actions/upload-artifact@v4
         with:
-          name: daily-khata-book-store-release-v1.45-build46
+          name: daily-khata-book-store-release-v1.46-build47
           path: dist/store-release/*
           if-no-files-found: error
