@@ -215,6 +215,45 @@ jobs:
                 JSObject result=new JSObject();result.put("created",true);result.put("scheduled",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Backup/Manual, Shop Documents, Credit Bills, Debits, Credits, Reports (legacy Document, Bills and Payments retained)");call.resolve(result);
               } catch(Exception e){call.reject("Could not create Daily Khata Book folders",e);}
             }
+            @PluginMethod public void ensureCustomerFolders(PluginCall call) {
+              try {
+                String customerId=call.getString("customerId","");
+                String customerName=call.getString("customerName","Customer");
+                String safeName=customerName.trim().replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                if(safeName.isEmpty())safeName="Customer";
+                if(safeName.length()>70)safeName=safeName.substring(0,70);
+                String idPart=customerId.replaceAll("[^A-Za-z0-9]","");
+                if(idPart.length()>8)idPart=idPart.substring(0,8);
+                if(idPart.isEmpty())idPart="legacy";
+                String[] folders=new String[]{"Credits/"+safeName+"__"+idPart,"Debits/"+safeName+"__"+idPart};
+                android.content.ContentResolver resolver=getContext().getContentResolver();
+                for(String folder:folders){
+                  String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
+                  String marker="Folder Info.txt";
+                  String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
+                  String[] args=new String[]{marker,relative+"/"};
+                  boolean exists=false;
+                  try(android.database.Cursor cursor=resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
+                    exists=cursor!=null&&cursor.moveToFirst();
+                  }
+                  if(!exists){
+                    ContentValues values=new ContentValues();
+                    values.put(MediaStore.MediaColumns.DISPLAY_NAME,marker);
+                    values.put(MediaStore.MediaColumns.MIME_TYPE,"text/plain");
+                    values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
+                    values.put(MediaStore.MediaColumns.IS_PENDING,1);
+                    Uri uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);
+                    if(uri==null)throw new Exception("Could not create "+folder);
+                    try(OutputStream out=resolver.openOutputStream(uri)){
+                      if(out==null)throw new Exception("Could not initialize "+folder);
+                      out.write("Daily Khata Book customer folder".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                    ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);resolver.update(uri,done,null,null);
+                  }
+                }
+                JSObject result=new JSObject();result.put("created",true);result.put("customerId",customerId);call.resolve(result);
+              } catch(Exception e){call.reject("Could not create customer Credit and Debit folders",e);}
+            }
             @PluginMethod public void saveToDownloads(PluginCall call) {
               String filename=call.getString("filename","automatic-backup.json");
               String content=call.getString("content");
