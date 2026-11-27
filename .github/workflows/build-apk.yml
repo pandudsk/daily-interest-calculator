@@ -187,7 +187,7 @@ jobs:
             @PluginMethod public void ensureFolderStructure(PluginCall call) {
               try {
                 android.content.ContentResolver resolver=getContext().getContentResolver();
-                String[] folders=new String[]{"Backup/Automatic","Document","Bills","Payments"};
+                String[] folders=new String[]{"Backup/Automatic","Backup/Manual","Shop Documents","Credit Bills","Debits","Credits","Reports","Document","Bills","Payments"};
                 for(String folder:folders){
                   String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
                   String marker="Folder Info.txt";
@@ -212,7 +212,7 @@ jobs:
                 Constraints constraints=new Constraints.Builder().setRequiredNetworkType(NetworkType.NOT_REQUIRED).build();
                 PeriodicWorkRequest dailyWork=new PeriodicWorkRequest.Builder(DailyKhataBackupWorker.class,24,TimeUnit.HOURS).setConstraints(constraints).build();
                 WorkManager.getInstance(getContext()).enqueueUniquePeriodicWork("daily-khata-automatic-backup",ExistingPeriodicWorkPolicy.KEEP,dailyWork);
-                JSObject result=new JSObject();result.put("created",true);result.put("scheduled",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Document, Bills, Payments");call.resolve(result);
+                JSObject result=new JSObject();result.put("created",true);result.put("scheduled",true);result.put("path","Downloads/Daily Khata Book/Backup/Automatic, Backup/Manual, Shop Documents, Credit Bills, Debits, Credits, Reports (legacy Document, Bills and Payments retained)");call.resolve(result);
               } catch(Exception e){call.reject("Could not create Daily Khata Book folders",e);}
             }
             @PluginMethod public void saveToDownloads(PluginCall call) {
@@ -249,40 +249,47 @@ jobs:
               } catch(Exception e){call.reject("Could not save automatic backup to Downloads",e);}
             }
             @PluginMethod public void saveFile(PluginCall call) {
-              String requestedFolder=call.getString("folder","Bills");
-              String folder;
-              if("Document".equals(requestedFolder)||"Shop Documents".equals(requestedFolder)||requestedFolder.startsWith("Shop Documents/")) folder="Document";
-              else if(requestedFolder.contains("/Debits")||"Payments".equals(requestedFolder)||"Gallery/UPI Screenshots".equals(requestedFolder)||"Gallery/Transaction Images".equals(requestedFolder)) folder="Payments";
-              else folder="Bills";
+              String requestedFolder=call.getString("folder","Credit Bills");
               String filename=call.getString("filename","attachment.bin");
               String base64=call.getString("base64");
               String mime=call.getString("mimeType","application/octet-stream");
               if(base64==null){call.reject("File content is missing");return;}
+              if(Build.VERSION.SDK_INT<29){call.reject("Public Downloads attachments require Android 10 or later");return;}
               try {
-                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+folder;
+                String normalized=requestedFolder.replace('\\\\','/').trim();
+                String[] parts=normalized.split("/");
+                java.util.ArrayList<String> safeParts=new java.util.ArrayList<>();
+                for(String part:parts){
+                  String safe=part.trim().replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                  if(safe.isEmpty()||".".equals(safe)||"..".equals(safe))continue;
+                  safeParts.add(safe.length()>70?safe.substring(0,70):safe);
+                }
+                if(safeParts.isEmpty())throw new Exception("A valid destination folder is required");
+                String root=safeParts.get(0);
+                if("Document".equals(root))safeParts.set(0,"Shop Documents");
+                else if("Bills".equals(root))safeParts.set(0,"Credit Bills");
+                else if("Payments".equals(root))safeParts.set(0,"Debits");
+                else if(!"Shop Documents".equals(root)&&!"Credit Bills".equals(root)&&!"Debits".equals(root)&&!"Credits".equals(root)&&!"Reports".equals(root))
+                  throw new Exception("Unsupported Daily Khata Book folder");
+                String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+android.text.TextUtils.join("/",safeParts);
+                String safeFilename=filename.replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                if(safeFilename.isEmpty())safeFilename="attachment.bin";
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 ContentValues values=new ContentValues();
-                values.put(MediaStore.MediaColumns.DISPLAY_NAME,filename);
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME,safeFilename);
                 values.put(MediaStore.MediaColumns.MIME_TYPE,mime);
                 values.put(MediaStore.MediaColumns.RELATIVE_PATH,relative);
                 values.put(MediaStore.MediaColumns.IS_PENDING,1);
                 Uri collection=MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-                String selection=MediaStore.MediaColumns.DISPLAY_NAME+"=? AND "+MediaStore.MediaColumns.RELATIVE_PATH+"=?";
-                String[] args=new String[]{filename,relative+"/"};
-                Uri target=null;
-                try(android.database.Cursor cursor=resolver.query(collection,new String[]{MediaStore.MediaColumns._ID},selection,args,null)){
-                  if(cursor!=null&&cursor.moveToFirst())target=Uri.withAppendedPath(collection,cursor.getString(0));
-                }
-                if(target==null)target=resolver.insert(collection,values);
-                else resolver.update(target,values,null,null);
-                if(target==null)throw new Exception("Could not create file in Downloads");
+                Uri target=resolver.insert(collection,values);
+                if(target==null)throw new Exception("Could not create a new file in Downloads");
                 try(OutputStream out=resolver.openOutputStream(target,"w")){
                   if(out==null)throw new Exception("Could not open output file");
                   out.write(android.util.Base64.decode(base64,android.util.Base64.DEFAULT));out.flush();
                 }
                 ContentValues done=new ContentValues();done.put(MediaStore.MediaColumns.IS_PENDING,0);
                 resolver.update(target,done,null,null);
-                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+folder+"/"+filename);call.resolve(result);
+                JSObject result=new JSObject();result.put("uri",target.toString());result.put("path","Downloads/Daily Khata Book/"+android.text.TextUtils.join("/",safeParts)+"/"+safeFilename);call.resolve(result);
               } catch(Exception e){call.reject("Could not copy file into Downloads",e);}
             }
             @PluginMethod public void updateBackupSnapshot(PluginCall call) {
