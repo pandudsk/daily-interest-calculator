@@ -67,7 +67,7 @@ async function saveSafetyCopy(json, filename = AUTO_BACKUP) {
  const internalVerified=await readRaw(filename);
  if (internalVerified!==json) throw new Error('Local app-storage backup verification failed. The backup is not marked successful.');
  if (filename===AUTO_BACKUP) {
-  const publicCopy=await NativeBackupDownloads.saveToDownloads({filename:'automatic-backup.json',content:json});
+  const publicCopy=await NativeBackupDownloads.saveToDownloads({filename:'automatic-backup.json',folder:'Backup/Automatic',content:json});
   window.__dailyKhataBackupDownloadUri=publicCopy?.uri||null;
   const downloadsVerified=await readDownloadsRaw();
   if (downloadsVerified!==json) throw new Error('Phone Downloads backup could not be verified. The app-storage copy was saved, but the two-copy backup is incomplete.');
@@ -116,9 +116,9 @@ async function listBackupFiles() {
  const result=await NativeBackupDownloads.listBackupFiles();
  return Array.isArray(result?.files)?result.files:[];
 }
-async function readBackupFile(filename) {
+async function readBackupFile(filename, folder='Backup/Automatic') {
  if(!Capacitor.isNativePlatform()||!NativeBackupDownloads?.readBackupFile)throw new Error('Backup archive is unavailable on this device.');
- const result=await NativeBackupDownloads.readBackupFile({filename});
+ const result=await NativeBackupDownloads.readBackupFile({filename,folder});
  return typeof result?.content==='string'?result.content:null;
 }
 window.NativeBackup={shareBackup,saveSafetyCopy,readSafetyCopy,getSafetyCopyInfo,updateBackupSnapshot,listBackupFiles,readBackupFile};
