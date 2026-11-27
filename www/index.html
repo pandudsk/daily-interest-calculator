@@ -434,11 +434,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
  <div class="backup-frequency-dialog">
   <h2 id="backupFrequencyTitle">Automatic backup</h2>
   <div class="backup-frequency-options">
-   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Daily"><span>Daily</span></label>
-   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Weekly"><span>Weekly</span></label>
-   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Monthly"><span>Monthly</span></label>
-   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Manual"><span>Only when I tap "Back up"</span></label>
-   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Off"><span>Off</span></label>
+   <label class="backup-frequency-option"><input type="radio" name="backupFrequency" value="Daily" checked><span>Daily automatic backup (required)</span></label>
   </div>
   <div class="backup-frequency-actions"><button type="button" id="backupFrequencyCancel">Cancel</button><button type="button" id="backupFrequencyOk">OK</button></div>
  </div>
@@ -512,8 +508,8 @@ function applyLanguage(){
 }
 function toast(s){let n=$('notice');n.textContent=s;n.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>n.classList.remove('show'),2400)}let autoBackupQueue=Promise.resolve();
 const BACKUP_FREQUENCY_KEY='di_backup_frequency';
-function backupFrequency(){return localStorage.getItem(BACKUP_FREQUENCY_KEY)||'Daily'}
-function updateBackupFrequencySummary(){const el=$('backupFrequencySummary');if(el)el.textContent=({Manual:'Only when I tap Back up',Off:'Off'})[backupFrequency()]||backupFrequency()+' ›'}
+function backupFrequency(){localStorage.setItem(BACKUP_FREQUENCY_KEY,'Daily');return 'Daily'}
+function updateBackupFrequencySummary(){const el=$('backupFrequencySummary');if(el)el.textContent='Daily · Automatic ›'}
 function openBackupFrequencyDialog(){
  const overlay=$('backupFrequencyOverlay');if(!overlay)return;
  const selected=backupFrequency();
@@ -532,10 +528,10 @@ function closeBackupFrequencyDialog(){const overlay=$('backupFrequencyOverlay');
  ok.addEventListener('click',()=>{
   const selected=document.querySelector('input[name="backupFrequency"]:checked');
   if(!selected){toast('Select an automatic backup frequency');return}
-  localStorage.setItem(BACKUP_FREQUENCY_KEY,selected.value);
+  localStorage.setItem(BACKUP_FREQUENCY_KEY,'Daily');
   updateBackupFrequencySummary();closeBackupFrequencyDialog();
-  toast('Automatic backup setting saved');
-  if(selected.value!=='Off'&&selected.value!=='Manual')runScheduledLocalBackup(true);
+  toast('Daily automatic backup is enabled');
+  runScheduledLocalBackup(true);
  });
  updateBackupFrequencySummary();
 })();
@@ -877,21 +873,31 @@ async function restoreBackupObject(d){
  if(d.format!=='dintakurthi-daily-interest'||!Array.isArray(d.customers)||!d.settings||!Number.isFinite(Number(d.settings.rate))||Number(d.settings.rate)<0)throw Error('shape');
  const customers=d.customers.map(c=>{if(!c||typeof c.id!=='string'||typeof c.name!=='string'||!Array.isArray(c.transactions))throw Error('customer');return {...c,transactions:c.transactions.map(x=>{if(!x||typeof x.date!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(x.date)||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0)throw Error('transaction');return {...x,amount:Number(x.amount),type:x.type==='debit'?'debit':'credit'}})}});
  if(!confirm('Restore this backup? A verified safety copy of current data must be created first.'))return false;
+ const previousState=state;
  const safety={format:'dintakurthi-daily-interest',version:3,exportedAt:new Date().toISOString(),...state,fileAttachments:await window.KhataFileStore?.exportAll?.()||[]};
  if(!window.NativeBackup?.saveSafetyCopy)throw Error('Local safety backup service is unavailable.');
- await window.NativeBackup.saveSafetyCopy(JSON.stringify(safety),'before-restore-'+Date.now()+'.json');
- state={customers,settings:{...blank().settings,...d.settings},profile:{...blank().profile,...(d.profile||{})},selected:customers.some(c=>c.id===d.selected)?d.selected:(customers[0]?.id||null)};
- if(Array.isArray(d.fileAttachments))await window.KhataFileStore?.importAll?.(d.fileAttachments);
- save();render();toast(msg[lang].restored);return true;
+ const safetyResult=await window.NativeBackup.saveSafetyCopy(JSON.stringify(safety),'before-restore-'+Date.now()+'.json');
+ if(!safetyResult?.verified)throw Error('Could not verify the pre-restore safety copy. Restore was cancelled.');
+ try{
+  state={customers,settings:{...blank().settings,...d.settings},profile:{...blank().profile,...(d.profile||{})},selected:customers.some(c=>c.id===d.selected)?d.selected:(customers[0]?.id||null)};
+  if(Array.isArray(d.fileAttachments))await window.KhataFileStore?.importAll?.(d.fileAttachments);
+  save();render();toast(msg[lang].restored);return true;
+ }catch(error){state=previousState;localStorage.setItem('di_state',JSON.stringify(previousState));render();throw error;}
 }
 $('backupBtn').onclick=async()=>{
  const data={format:'dintakurthi-daily-interest',version:3,exportedAt:new Date().toISOString(),...state,fileAttachments:await window.KhataFileStore?.exportAll?.()||[]};
  try{
   if(!window.NativeBackup?.saveSafetyCopy)throw new Error('Android physical backup service is unavailable.');
-  const result=await window.NativeBackup.saveSafetyCopy(JSON.stringify(data),'automatic-backup.json');
+  const json=JSON.stringify(data);
+  const result=await window.NativeBackup.saveSafetyCopy(json,'automatic-backup.json');
   if(!result?.verified)throw new Error('Backup file verification did not complete.');
-  await refreshLocalBackupStatus();
-  toast('Backup saved and verified: Download/Daily Khata Book/Backup/automatic-backup.json');
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const filename='Khata-Manual-'+stamp+'.json';
+  const saved=await window.NativeBackupDownloads.saveToDownloads({filename,content:json});
+  const check=await window.NativeBackup.readBackupFile(filename);
+  if(check!==json)throw new Error('Manual backup file verification failed.');
+  await refreshLocalBackupStatus();await loadBackupArchive();
+  toast('Manual backup saved and verified in Backup/Automatic.');
  }catch(err){console.error('Physical backup failed',err);toast('Backup failed. '+(err?.message||''));}
 };
 $('restoreBtn').onclick=async()=>{
