@@ -5,7 +5,10 @@ async function mirrorToDownloads(record){
  if(!record?.blob||!record?.id)return false;
  const dataUrl=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(String(fr.result));fr.onerror=reject;fr.readAsDataURL(record.blob)});
  const base64=dataUrl.split(',')[1]||'';
- const folder=String(record.folder||'Gallery').startsWith('Shop Documents')?'Document':'Gallery';
+ const sourceFolder=String(record.folder||'');
+ const isShopDocument=sourceFolder.startsWith('Shop Documents')||sourceFolder==='Document';
+ const isDebit=sourceFolder.includes('/Debits')||String(record.type||'').toLowerCase()==='debit';
+ const folder=isShopDocument?'Document':(isDebit?'Payments':'Bills');
  const safeName=String(record.name||'attachment').replace(/[\\/:*?\"<>|]/g,'_');
  await NativeBackupDownloads.saveFile({folder,filename:`${record.id}-${safeName}`,base64,mimeType:record.mimeType||record.blob.type||'application/octet-stream'});
  return true;
