@@ -607,7 +607,7 @@ jobs:
               raise SystemExit("Gradle dependencies block not found")
           for dependency in dependencies:
               if dependency not in text:
-                  text = text.replace("dependencies {", "dependencies {\\n    " + dependency, 1)
+                  text = text.replace("dependencies {", "dependencies {" + chr(10) + "    " + dependency, 1)
           path.write_text(text)
           print("AndroidX Biometric and WorkManager dependencies configured.")
           PY
