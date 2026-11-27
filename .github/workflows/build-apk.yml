@@ -219,7 +219,7 @@ jobs:
               try {
                 String customerId=call.getString("customerId","");
                 String customerName=call.getString("customerName","Customer");
-                String safeName=customerName.trim().replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                String safeName=customerName.trim().replaceAll("[\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
                 if(safeName.isEmpty())safeName="Customer";
                 if(safeName.length()>70)safeName=safeName.substring(0,70);
                 String idPart=customerId.replaceAll("[^A-Za-z0-9]","");
@@ -295,11 +295,11 @@ jobs:
               if(base64==null){call.reject("File content is missing");return;}
               if(Build.VERSION.SDK_INT<29){call.reject("Public Downloads attachments require Android 10 or later");return;}
               try {
-                String normalized=requestedFolder.replace('\\\\','/').trim();
+                String normalized=requestedFolder.replace('\\','/').trim();
                 String[] parts=normalized.split("/");
                 java.util.ArrayList<String> safeParts=new java.util.ArrayList<>();
                 for(String part:parts){
-                  String safe=part.trim().replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                  String safe=part.trim().replaceAll("[\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
                   if(safe.isEmpty()||".".equals(safe)||"..".equals(safe))continue;
                   safeParts.add(safe.length()>70?safe.substring(0,70):safe);
                 }
@@ -311,7 +311,7 @@ jobs:
                 else if(!"Shop Documents".equals(root)&&!"Credit Bills".equals(root)&&!"Debits".equals(root)&&!"Credits".equals(root)&&!"Reports".equals(root))
                   throw new Exception("Unsupported Daily Khata Book folder");
                 String relative=Environment.DIRECTORY_DOWNLOADS+"/Daily Khata Book/"+android.text.TextUtils.join("/",safeParts);
-                String safeFilename=filename.replaceAll("[\\\\\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
+                String safeFilename=filename.replaceAll("[\\\\/:*?\\\"<>|]","_").replaceAll("[. ]+$","");
                 if(safeFilename.isEmpty())safeFilename="attachment.bin";
                 android.content.ContentResolver resolver=getContext().getContentResolver();
                 ContentValues values=new ContentValues();
