@@ -444,7 +444,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
  </div>
 </div>
 <button type="button" class="secondary" id="automaticBackupSettings" style="width:100%;margin:8px 0 12px;text-align:left">Automatic backup <span id="backupFrequencySummary" style="float:right">Daily ›</span></button>
-<section id="localBackupStatus" style="border:1px solid var(--line);border-radius:13px;padding:13px;margin:12px 0;background:#fbf9ff"><div class="row"><b>Automatic Backup Status</b><span id="localBackupBadge" class="pill">Checking…</span></div><div class="row" style="margin-top:10px"><span class="muted">Last backup</span><b id="localBackupTime">—</b></div><div class="row" style="margin-top:8px"><span class="muted">Customers backed up</span><b id="localBackupCustomers">—</b></div><div class="row" style="margin-top:8px"><span class="muted">Transactions backed up</span><b id="localBackupTransactions">—</b></div><p id="localBackupNote" class="muted">Backup file verification status will appear here.</p><div class="muted" style="overflow-wrap:anywhere;margin-top:8px">File Manager: Internal Storage / Download / Daily Khata Book / Backup / automatic-backup.json. The app also creates Document and Gallery folders beside Backup. Shop documents are saved in Document; images and other gallery attachments are saved in Gallery.</div><button type="button" class="secondary" id="openAutomaticBackupBtn" style="width:100%;margin-top:10px">Open backup file location</button></section><div class="backup-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px"><button class="secondary" id="backupBtn" style="width:100%;min-width:0;padding:12px 6px">Backup</button><button class="secondary" id="restoreBtn" style="width:100%;min-width:0;padding:12px 6px">Restore</button><button class="danger" id="deleteAllBtn" style="width:100%;min-width:0;padding:12px 6px">Delete</button><input type="file" id="restoreFile" accept=".json,application/json" class="hidden"></div></div></details>
+<section id="localBackupStatus" style="border:1px solid var(--line);border-radius:13px;padding:13px;margin:12px 0;background:#fbf9ff"><div class="row"><b>Automatic Backup Status</b><span id="localBackupBadge" class="pill">Checking…</span></div><div class="row" style="margin-top:10px"><span class="muted">Last backup</span><b id="localBackupTime">—</b></div><div class="row" style="margin-top:8px"><span class="muted">Customers backed up</span><b id="localBackupCustomers">—</b></div><div class="row" style="margin-top:8px"><span class="muted">Transactions backed up</span><b id="localBackupTransactions">—</b></div><p id="localBackupNote" class="muted">Backup file verification status will appear here.</p><div class="muted" style="overflow-wrap:anywhere;margin-top:8px">File Manager: Internal Storage / Download / Daily Khata Book / Backup / automatic-backup.json. The app also creates Document and Gallery folders beside Backup. Shop documents are saved in Document; images and other gallery attachments are saved in Gallery.</div><button type="button" class="secondary" id="openAutomaticBackupBtn" style="width:100%;margin-top:10px">Open backup file location</button></section><section id="backupArchiveSection" style="border:1px solid var(--line);border-radius:13px;padding:13px;margin:12px 0;background:#fff"><div class="row"><b>Backup History</b><button type="button" class="secondary" id="refreshBackupArchiveBtn" style="padding:7px 10px">Refresh</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><label class="muted" style="font-size:12px">Find date<input id="backupDateFilter" type="date" style="width:100%;margin-top:4px"></label><label class="muted" style="font-size:12px">Find customer<input id="backupCustomerFilter" type="search" placeholder="Customer name" style="width:100%;margin-top:4px"></label></div><label class="muted" style="display:block;font-size:12px;margin-top:8px">Sort backups<select id="backupSortMode" style="width:100%;margin-top:4px"><option value="date-desc">Newest date first</option><option value="date-asc">Oldest date first</option><option value="customer-asc">Customer A–Z</option><option value="customer-desc">Customer Z–A</option></select></label><div id="backupArchiveList" style="margin-top:10px"><p class="muted">Loading backup history…</p></div></section><div class="backup-actions" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px"><button class="secondary" id="backupBtn" style="width:100%;min-width:0;padding:12px 6px">Backup</button><button class="secondary" id="restoreBtn" style="width:100%;min-width:0;padding:12px 6px">Restore</button><button class="danger" id="deleteAllBtn" style="width:100%;min-width:0;padding:12px 6px">Delete</button><input type="file" id="restoreFile" accept=".json,application/json" class="hidden"></div></div></details>
 <details class="settings-card" id="aboutSettingsCard"><summary><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg></span><span class="settings-heading"><b>About</b><small>App version and details</small></span><span class="settings-chevron">›</span></summary><div class="settings-content"><div class="about-app"><div><div class="about-name">Daily Khata Book</div><div class="about-meta">App version and details</div></div></div><p class="muted" style="margin-top:12px">Made in 🇮🇳 India</p></div></details>
 </section>
 
@@ -549,16 +549,16 @@ function isScheduledBackupDue(lastBackup,frequency){
  return false;
 }
 async function runScheduledLocalBackup(force=false,onDataChange=false){
- const frequency=backupFrequency();
- if(frequency==='Off'||frequency==='Manual')return false;
- if(!force&&!onDataChange){
-  const info=await window.NativeBackup?.getSafetyCopyInfo?.();
-  if(!isScheduledBackupDue(info?.exportedAt,frequency))return false;
- }
  if(!window.NativeBackup?.saveSafetyCopy)return false;
  const payload={format:'dintakurthi-daily-interest',version:3,exportedAt:new Date().toISOString(),...state,fileAttachments:await window.KhataFileStore?.exportAll?.()||[]};
- await window.NativeBackup.saveSafetyCopy(JSON.stringify(payload),'automatic-backup.json');
- await refreshLocalBackupStatus();return true;
+ const json=JSON.stringify(payload);
+ // Keep the latest full snapshot in app-private storage for Android WorkManager.
+ // WorkManager can write it to Downloads even while the app process is closed.
+ if(window.NativeBackup?.updateBackupSnapshot)await window.NativeBackup.updateBackupSnapshot(json);
+ const info=await window.NativeBackup?.getSafetyCopyInfo?.();
+ if(!force&&!onDataChange&&!isScheduledBackupDue(info?.exportedAt,'Daily'))return false;
+ await window.NativeBackup.saveSafetyCopy(json,'automatic-backup.json');
+ await refreshLocalBackupStatus();await loadBackupArchive();return true;
 }
 document.addEventListener('click',async e=>{if(e.target?.id==='openAutomaticBackupBtn'){try{await window.NativeBackupDownloads?.openBackup?.();}catch(err){console.error('Open backup location failed',err);toast('Could not open backup file. Check Downloads folder.')}}});
 function refreshLocalBackupStatus(){
@@ -707,7 +707,7 @@ $('customCompoundBtn').onclick=()=>setCustomInterestMode('compound');
 $('clearCustomInterest').onclick=()=>{['customInterestPrincipal','customInterestFromDate','customInterestToDate'].forEach(id=>$(id).value='');$('customInterestRate').value='1.50';customInterestMode=null;$('customSimpleBtn').classList.remove('selected');$('customCompoundBtn').classList.remove('selected');$('customSimpleBtn').setAttribute('aria-pressed','false');$('customCompoundBtn').setAttribute('aria-pressed','false');calculateCustomInterest();$('customInterestNote').textContent='Select Simple or Compound to calculate. Rate is rupees per ₹100 per month.'};
 function save(){
  const json=JSON.stringify(state);localStorage.setItem('di_state',json);
- autoBackupQueue=autoBackupQueue.catch(()=>{}) .then(()=>runScheduledLocalBackup(false,true)).catch(e=>{console.error('Automatic backup failed',e);const note=$('localBackupNote');if(note)note.textContent='Automatic backup failed: '+(e?.message||'unknown error');const badge=$('localBackupBadge');if(badge){badge.textContent='Failed';badge.style.background='var(--redbg)';badge.style.color='var(--red)';}});
+ autoBackupQueue=autoBackupQueue.catch(()=>{}).then(()=>runScheduledLocalBackup(false,true)).catch(e=>{console.error('Automatic backup snapshot update failed',e);const note=$('localBackupNote');if(note)note.textContent='Backup snapshot update failed: '+(e?.message||'unknown error');const badge=$('localBackupBadge');if(badge){badge.textContent='Failed';badge.style.background='var(--redbg)';badge.style.color='var(--red)';}});
 }function current(){return state.customers.find(c=>c.id===state.selected)||null}
 function updateInterestControls(){const on=$('interestEnabled').checked;$('interestOptions').classList.toggle('off',!on);$('interestOffNote').classList.toggle('hidden',on);$('simpleInterestBtn').classList.toggle('selected',state.settings.compound!=='annual');$('compoundInterestBtn').classList.toggle('selected',state.settings.compound==='annual');$('interestMethodHint').textContent=state.settings.compound==='annual'?'Compound: accrued interest is added to principal on each ledger anniversary.':'Simple: interest is calculated only on outstanding principal.';$('compounding').value=state.settings.compound;}function ledger(c,type,end){let tx=(c?.transactions||[]).filter(x=>x.type===type&&x.date&&Number(x.amount)>0&&x.date<=end).sort((a,b)=>a.date.localeCompare(b.date));if(!tx.length)return{rows:[],principal:0,interest:0,total:0,first:null,days:0};let cfg=c?.interest||{enabled:state.settings.enabled!==false,rate:state.settings.rate,compound:state.settings.compound},grouped={};tx.forEach(x=>grouped[x.date]=(grouped[x.date]||0)+Number(x.amount));let dates=Object.keys(grouped).sort(),first=dates[0],principal=0,accrued=0,interestTotal=0,rows=[],daily=cfg.enabled===false?0:Number(cfg.rate??state.settings.rate)/100/30,compound=cfg.compound==='annual';function accrue(from,to){let cursor=from;while(cursor<to){let next=to,ann=null;if(compound){let n=1;while(addYears(first,n)<=cursor)n++;let a=addYears(first,n);if(a<=to){next=a;ann=a}}let days=dayDiff(cursor,next),opening=principal+accrued,int=principal*daily*days;accrued+=int;interestTotal+=int;if(ann){principal+=accrued;accrued=0}rows.push({date:next,days,opening,interest:int,added:0,closing:principal+accrued,detail:ann?'Annual interest capitalized':'Interest accrued'});cursor=next}}for(let d of dates){if(rows.length)accrue(rows[rows.length-1].date,d);let amount=grouped[d],opening=principal+accrued;principal+=amount;rows.push({date:d,days:0,opening,interest:0,added:amount,closing:principal+accrued,detail:type==='credit'?'Appulu entry':'Jamalu entry'})}if(dates.at(-1)<end)accrue(dates.at(-1),end);return{rows,principal,interest:interestTotal,total:principal+accrued,first,days:dayDiff(first,end)}}
 function docStatus(doc){if(!doc.expiry)return{label:"Expiry date not set",kind:"soon",days:null};const days=dayDiff(todayISO(),doc.expiry);if(days<0)return{label:"Expired "+Math.abs(days)+" days ago",kind:"due",days};if(days===0)return{label:"Expires today",kind:"due",days};if(days<=7)return{label:"Expires in "+days+" days",kind:"due",days};if(days<=30)return{label:"Expires in "+days+" days",kind:"soon",days};return{label:"Valid · "+days+" days left",kind:"ok",days};}
@@ -895,9 +895,9 @@ $('backupBtn').onclick=async()=>{
  }catch(err){console.error('Physical backup failed',err);toast('Backup failed. '+(err?.message||''));}
 };
 $('restoreBtn').onclick=async()=>{
- try{const raw=await window.NativeBackup?.readSafetyCopy?.();if(raw){await restoreBackupObject(JSON.parse(raw));return;}}
- catch(err){console.error('Device backup restore failed',err);toast('Device backup could not be restored: '+(err?.message||''));return;}
- $('restoreFile').click();
+ await loadBackupArchive();
+ const section=$('backupArchiveSection');if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
+ toast('Select a dated backup below to restore it safely.');
 };
 $('restoreFile').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
@@ -905,6 +905,38 @@ $('restoreFile').onchange=async e=>{
  catch(err){console.error('Restore failed',err);toast(msg[lang].badBackup+' '+(err?.message||''));}
  finally{e.target.value='';}
 };
+async function loadBackupArchive(){
+ const host=$('backupArchiveList');if(!host)return;
+ host.innerHTML='<p class="muted">Loading backup history…</p>';
+ try{
+  const files=await window.NativeBackup?.listBackupFiles?.()||[];
+  const entries=[];
+  for(const file of files){
+   try{
+    const raw=await window.NativeBackup.readBackupFile(file.name),data=JSON.parse(raw||'{}');
+    const customers=Array.isArray(data.customers)?data.customers:[];
+    const names=customers.map(c=>String(c.name||'')).filter(Boolean);
+    const transactions=customers.reduce((n,c)=>n+(Array.isArray(c.transactions)?c.transactions.length:0),0);
+    entries.push({...file,exportedAt:data.exportedAt||null,customerCount:customers.length,transactionCount:transactions,customerNames:names,raw});
+   }catch(error){entries.push({...file,exportedAt:null,customerCount:0,transactionCount:0,customerNames:[],invalid:true});}
+  }
+  const dateFilter=$('backupDateFilter')?.value||'',customerFilter=($('backupCustomerFilter')?.value||'').trim().toLowerCase(),sort=$('backupSortMode')?.value||'date-desc';
+  let filtered=entries.filter(x=>{
+   const date=x.exportedAt?new Date(x.exportedAt).toISOString().slice(0,10):'';
+   return (!dateFilter||date===dateFilter)&&(!customerFilter||x.customerNames.some(n=>n.toLowerCase().includes(customerFilter)));
+  });
+  filtered.sort((a,b)=>{
+   if(sort.startsWith('customer')){const an=(a.customerNames[0]||'').toLowerCase(),bn=(b.customerNames[0]||'').toLowerCase();return sort.endsWith('asc')?an.localeCompare(bn):bn.localeCompare(an);}
+   const ad=a.exportedAt?new Date(a.exportedAt).getTime():Number(a.modified||0)*1000,bd=b.exportedAt?new Date(b.exportedAt).getTime():Number(b.modified||0)*1000;
+   return sort==='date-asc'?ad-bd:bd-ad;
+  });
+  if(!filtered.length){host.innerHTML='<p class="muted">No matching backup files found.</p>';return;}
+  host.innerHTML=filtered.map((x,i)=>{const stamp=x.exportedAt?new Date(x.exportedAt).toLocaleString():x.name;const customers=x.customerNames.slice(0,3).join(', ')+(x.customerNames.length>3?' +'+(x.customerNames.length-3)+' more':'');const size=(Number(x.size||0)/1024).toFixed(1)+' KB';return '<div style="border-top:1px solid var(--line);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px;overflow-wrap:anywhere">'+escapeHtml(x.name)+'</b><span class="pill">'+(x.invalid?'Invalid':'Verified JSON')+'</span></div><div class="muted" style="font-size:12px;margin-top:4px">'+escapeHtml(stamp)+' · '+size+'</div><div style="font-size:12px;margin-top:4px">Customers: '+x.customerCount+' · Transactions: '+x.transactionCount+'</div><div class="muted" style="font-size:12px;margin-top:3px;overflow-wrap:anywhere">'+escapeHtml(customers||'No customer names')+'</div><button type="button" class="secondary backup-restore-entry" data-backup-name="'+escapeHtml(x.name)+'" style="margin-top:7px;padding:8px 12px" '+(x.invalid?'disabled':'')+'>Restore this backup</button></div>';}).join('');
+  host.querySelectorAll('.backup-restore-entry').forEach(btn=>btn.addEventListener('click',async()=>{try{const raw=await window.NativeBackup.readBackupFile(btn.dataset.backupName);await restoreBackupObject(JSON.parse(raw));}catch(error){console.error('Archive restore failed',error);toast('Restore failed: '+(error?.message||''));}}));
+ }catch(error){console.error('Backup archive listing failed',error);host.innerHTML='<p class="muted">Could not load backup history: '+escapeHtml(error?.message||'')+'</p>';}
+}
+['backupDateFilter','backupCustomerFilter','backupSortMode','refreshBackupArchiveBtn'].forEach(id=>$(id)?.addEventListener(id==='refreshBackupArchiveBtn'?'click':'change',loadBackupArchive));
+$('backupCustomerFilter')?.addEventListener('input',()=>{clearTimeout(window.backupFilterTimer);window.backupFilterTimer=setTimeout(loadBackupArchive,250)});
 $('deleteAllBtn').onclick=()=>{if(confirm(msg[lang].confirmAll)){state=blank();save();render();toast('All data deleted')}};async function initializeApp(){let restoredFromBackup=false;try{const shouldCheckSafetyCopy=!storedStateValid||!state.customers.length;if(shouldCheckSafetyCopy&&window.NativeBackup?.readSafetyCopy){const raw=await window.NativeBackup.readSafetyCopy();if(raw){const d=JSON.parse(raw);if((d.format==='dintakurthi-daily-interest'||!d.format)&&Array.isArray(d.customers)&&d.customers.length>0&&d.settings){state={customers:d.customers,settings:{...blank().settings,...d.settings},profile:{...blank().profile,...(d.profile||{})},selected:d.customers.some(c=>c.id===d.selected)?d.selected:(d.customers[0]?.id||null)};state.customers.forEach(c=>{c.transactions=Array.isArray(c.transactions)?c.transactions.map(x=>({...x,type:x.type||'credit'})):[]});storedStateValid=true;restoredFromBackup=true;localStorage.setItem('di_state',JSON.stringify(state));console.info('Recovered Khata data from verified automatic backup:',state.customers.length,'customers');}}}}catch(e){console.error('Automatic restore failed',e)}try{if((storedStateValid||restoredFromBackup)&&loadedStateKey==='di_state')await runScheduledLocalBackup(false);else if(loadedStateKey!=='di_state')console.warn('Recovery source key preserved; startup backup skipped until recovered customer and transaction counts are verified:',loadedStateKey)}catch(e){console.error('Automatic backup initialization failed',e)}const v=window.APP_VERSION;if(v){$('appVersionMeta').textContent='Version '+v.name+' · Build '+v.code;const sv=$('splashVersion');if(sv)sv.textContent='Version '+v.name+' · Build '+v.code}render();refreshLocalBackupStatus();window.__hideSplash&&window.__hideSplash();initShopDocuments()}initializeApp();
 
 // Shop Profile overlay: move existing settings cards (do not duplicate them).
